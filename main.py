@@ -153,6 +153,7 @@ class OptimizationApp:
         #self.first_screen.destroy()  # Close the first screen
 
 def main():
+    print('test push')
     root = tk.Tk()
     OptimizationApp(root)
     root.mainloop()
