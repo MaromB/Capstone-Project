@@ -105,7 +105,7 @@ class SecondScreen(tk.Frame):
         self.iteration_label = ttk.Label(info_frame2, text="Iteration number:            0", font=custom_font, background="light sky blue")
         self.coverage_label = ttk.Label(info_frame2, text="Coverage:                       0%", font=custom_font, background="light sky blue")
         self.details_label = ttk.Label(info_frame3, text=f"For  {routers}  routers, {clients}  clients and  {areah}  X  {areal}  area size", font=custom_font, background="light sky blue")
-        self.keep_button = ttk.Button(info_frame3, text="Keep", command=self.keep_optimization, style="Custom.TButton")
+        self.continue_button = ttk.Button(info_frame3, text="Continue", command=self.keep_optimization, style="Custom.TButton")
         self.stop_button = ttk.Button(info_frame3, text="Stop", command=self.stop_optimization, style="Custom.TButton")
 
         self.top_label.grid(row=0, column=0, padx=0, pady=10)
@@ -114,12 +114,13 @@ class SecondScreen(tk.Frame):
         self.iteration_label.grid(row=2, column=0, padx=0, pady=10, sticky=tk.W)
         self.coverage_label.grid(row=3, column=0, padx=0, pady=10, sticky=tk.W)
         self.details_label.grid(row=1, column=1, padx=0, pady=20)
-        self.keep_button.grid(row=2, column=1, padx=(200, 0), pady=0)
+        self.continue_button.grid(row=2, column=1, padx=(200, 0), pady=0)
         self.stop_button.grid(row=2, column=1, padx=(0, 200), pady=0)
 
         self.space = Area(int(self.areah), int(self.areal))
         self.space.generate_random_routers_and_clients(int(self.routers), int(self.clients), 5)
-        self.space.visualize_routers(root2)
+        self.space.visualize_illustration(root2)
+        self.space
 
     def update_labels(self, coverage_percentage, iteration_number):
         # Update labels with the latest values

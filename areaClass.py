@@ -33,7 +33,9 @@ class Area:
             # Create a client with the random coordinates
             client = Client(x, y)
             self.clients.append(client)
-    def visualize_routers(self, root2):
+
+        return
+    def visualize_illustration(self, root2):
         # Create a scatter plot to visualize routers
         x_coords = [router.x for router in self.routers]
         y_coords = [router.y for router in self.routers]
