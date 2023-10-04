@@ -1,5 +1,8 @@
 import math
+import random
 import tkinter as tk
+
+import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class Algorithm:
@@ -11,23 +14,24 @@ class Algorithm:
 
     def pso_algorithm(self):
     def ga_algorithm(space, max_iterations, visualize_func):
-        current_population = space.routers
+
+        current_population = space.initialize_population(20, space.routers, space.areah, space.areal)
 
         for iteration in range(max_iterations):
             # Evaluate the fitness of each solution in the population
-            fitness_scores = [fitness_function(space, current_population, client_locations) for client_locations in space.clients]
-
+            # fitness_scores = [space.fitness_function(space, current_population, client_locations) for client_locations in space.clients]
+            fitness_scores = [space.fitness_function(space, current_population, space.clients) for _ in range(len(current_population))]
             # Select parents for crossover (you can use various selection methods)
-            selected_parents = select_parents(current_population, fitness_scores)
+            selected_parents = space.select_parents(current_population, fitness_scores)
 
             # Create a new population using crossover
-            new_population = crossover(selected_parents)
+            new_population = space.crossover(selected_parents)
 
             # Apply mutation to some solutions in the new population
-            mutated_population = mutate(new_population)
+            mutated_population = space.mutate(new_population)
 
             # Evaluate the fitness of the mutated population
-            mutated_fitness_scores = [fitness_function(space, mutated_population, client_locations) for client_locations in space.clients]
+            mutated_fitness_scores = [space.fitness_function(space, mutated_population, client_locations) for client_locations in space.clients]
 
             # Replace the current population with the mutated population if it's better
             if is_better(mutated_fitness_scores, fitness_scores):
@@ -39,20 +43,56 @@ class Algorithm:
             # Return the best router locations found
         return current_population
 
-        def fitness_function(space, router_locations, client_locations):
-            # Calculate the coverage metric based on router locations and client locations
-            coverage = calculate_coverage(space, router_locations, client_locations)
+    def fitness_function(space, router_locations, client_locations):
 
-            # Calculate some other objective function if needed
-            # For example, you may want to maximize coverage while minimizing the number of routers used
+        total_coverage = 0
+        for client in client_locations:
+            is_covered = False
+            for router in router_locations:
+                if space.isItCovered(router, client):
+                    is_covered = True
+                    break
+            if is_covered:
+                total_coverage += 1
 
-            return coverage  # Adjust this based on your specific objective
+        return total_coverage / len(client_locations) * 100  # Return coverage as a percentage
 
-        def select_parents(population, fitness_scores):
+    def initialize_population(num_solutions, num_routers, areah, areal):
+        """
+        Initialize a population of random solutions for the WMNs optimization problem.
 
-        # Implement a selection method to choose parents based on fitness scores
-        # You can use roulette wheel selection, tournament selection, etc.
+        Parameters:
+            num_solutions (int): Number of random solutions to generate.
+            num_routers (int): Number of routers in each solution.
+            areah (int): Width of the area.
+            areal (int): Length of the area.
 
+        Returns:
+            List[List[Tuple[int, int]]]: A list of random solutions, where each solution is a list of (x, y) coordinates for routers.
+        """
+        population = []
+
+        for _ in range(num_solutions):
+            solution = []
+            for _ in range(num_routers):
+                x = random.randint(0, areah)
+                y = random.randint(0, areal)
+                solution.append((x, y))
+            population.append(solution)
+
+        return population
+
+    def select_parents(population, fitness_scores, num_parents, tournament_size=3):
+        selected_parents = []
+
+        for _ in range(num_parents):
+            # Perform tournament selection
+            tournament_indices = np.random.choice(len(population), tournament_size, replace=False)
+            tournament_fitness = [fitness_scores[i] for i in tournament_indices]
+            selected_index = tournament_indices[np.argmax(tournament_fitness)]
+            selected_parents.append(population[selected_index])
+
+        return selected_parents
         def crossover(parents):
 
         # Implement crossover to create new solutions from parents
