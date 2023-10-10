@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-from areaClass import Area  # Import the Router class from routerClass.py
+from areaClass import Area
+from algorithmClass import Algorithm
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from routerClass import Router  # Import the Router class from routerClass.py
@@ -62,18 +63,18 @@ class FirstScreen(tk.Frame):
     def switch_to_second_screen(self):
         routers = self.entry_Routers.get()
         clients = self.entry_Clients.get()
-        areah = self.entry_SizeH.get()
-        areal = self.entry_SizeL.get()
+        height = self.entry_SizeH.get()
+        width = self.entry_SizeL.get()
         algotype = self.algorithm_combobox.get()
-        self.show_second_screen(routers, clients, areah, areal, algotype)
+        self.show_second_screen(routers, clients, height, width, algotype)
 
 class SecondScreen(tk.Frame):
-    def __init__(self, parent, routers, clients, areah, areal, algotype):
+    def __init__(self, parent, routers, clients, height, width, algotype):
         super().__init__(parent)
         self.routers = routers
         self.clients = clients
-        self.areah = areah
-        self.areal = areal
+        self.height = height
+        self.width = width
         self.algotype = algotype
 
         root2 = tk.Toplevel()  # Create a new window (second screen)
@@ -104,7 +105,7 @@ class SecondScreen(tk.Frame):
         self.name_algorithm = ttk.Label(info_frame2, text=self.algotype, font=custom_font, background="light sky blue")
         self.iteration_label = ttk.Label(info_frame2, text="Iteration number:            0", font=custom_font, background="light sky blue")
         self.coverage_label = ttk.Label(info_frame2, text="Coverage:                       0%", font=custom_font, background="light sky blue")
-        self.details_label = ttk.Label(info_frame3, text=f"For  {routers}  routers, {clients}  clients and  {areah}  X  {areal}  area size", font=custom_font, background="light sky blue")
+        self.details_label = ttk.Label(info_frame3, text=f"For  {routers}  routers, {clients}  clients and  {height}  X  {width}  area size", font=custom_font, background="light sky blue")
         self.continue_button = ttk.Button(info_frame3, text="Continue", command=self.keep_optimization, style="Custom.TButton")
         self.stop_button = ttk.Button(info_frame3, text="Stop", command=self.stop_optimization, style="Custom.TButton")
 
@@ -117,10 +118,12 @@ class SecondScreen(tk.Frame):
         self.continue_button.grid(row=2, column=1, padx=(200, 0), pady=0)
         self.stop_button.grid(row=2, column=1, padx=(0, 200), pady=0)
 
-        self.space = Area(int(self.areah), int(self.areal))
+        self.space = Area(int(self.height), int(self.width))
+        self.algorithm = Algorithm(self.space, self.routers, self.clients, self.height, self.height)
         self.space.generate_random_routers_and_clients(int(self.routers), int(self.clients), 5)
         self.space.visualize_illustration(root2)
-        self.space
+        self.algorithm.run_algorithm(root2, algotype)
+
 
     def update_labels(self, coverage_percentage, iteration_number):
         # Update labels with the latest values
@@ -149,8 +152,8 @@ class OptimizationApp:
         self.first_screen = FirstScreen(self.root, self.show_second_screen)
         self.first_screen.pack()
 
-    def show_second_screen(self, routers, clients, areah, areal, algotype):
-        SecondScreen(self.root, routers, clients, areah, areal, algotype)
+    def show_second_screen(self, routers, clients, height, width, algotype):
+        SecondScreen(self.root, routers, clients, height, width, algotype)
         #self.first_screen.destroy()  # Close the first screen
 
 def main():
