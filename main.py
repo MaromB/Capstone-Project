@@ -4,7 +4,7 @@ from areaClass import Area
 from algorithmClass import Algorithm
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from routerClass import Router  # Import the Router class from routerClass.py
+from matplotlib.patches import Circle
 
 class FirstScreen(tk.Frame):
     def __init__(self, parent, show_second_screen):
@@ -76,29 +76,36 @@ class SecondScreen(tk.Frame):
         self.height = height
         self.width = width
         self.algotype = algotype
+        self.second_screen = None
 
-        root2 = tk.Toplevel()  # Create a new window (second screen)
-        root2.title("WMNs Optimization - map")
+        self.fig, self.ax = plt.subplots(figsize=(4, 4))
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self)
+
+        # ax.clear()  # Clear the axis
+
+        tk_screen2 = tk.Toplevel()  # Create a new window (second screen)
+        tk_screen2.title("WMNs Optimization - map")
+        tk_screen2.configure(bg="light sky blue")
         style = ttk.Style()
         style.configure("Custom.TFrame", background="light sky blue")
 
         # Get screen width and height
-        screen_width = root2.winfo_screenwidth()
-        screen_height = root2.winfo_screenheight()
+        screen_width = tk_screen2.winfo_screenwidth()
+        screen_height = tk_screen2.winfo_screenheight()
 
         x = (screen_width - 800) // 2
         y = (screen_height - 600) // 2
 
         # Set window size and position
-        root2.geometry(f'1000x700+{x + 100}+{y - 50}')
+        tk_screen2.geometry(f'1000x700+{x + 100}+{y - 50}')
         lable_font = ("Ariel", 20, "bold")
         custom_font = ("Ariel", 14)
 
-        info_frame1 = ttk.Frame(root2, style="Custom.TFrame")
+        info_frame1 = ttk.Frame(tk_screen2, style="Custom.TFrame")
         info_frame1.pack(side=tk.TOP, anchor=tk.S, padx=80, pady=20)
-        info_frame2 = ttk.Frame(root2, style="Custom.TFrame")
+        info_frame2 = ttk.Frame(tk_screen2, style="Custom.TFrame")
         info_frame2.pack(side=tk.TOP, anchor=tk.W, padx=20, pady=20)
-        info_frame3 = ttk.Frame(root2, style="Custom.TFrame")
+        info_frame3 = ttk.Frame(tk_screen2, style="Custom.TFrame")
         info_frame3.pack(side=tk.BOTTOM, anchor=tk.S, padx=0, pady=10)
         self.top_label = ttk.Label(info_frame1, text="Optimization of routers placements in WMNs", font=lable_font, background="light sky blue")
         self.running_algorithm = ttk.Label(info_frame2, text="Running algorithm:", font=custom_font, background="light sky blue")
@@ -119,11 +126,9 @@ class SecondScreen(tk.Frame):
         self.stop_button.grid(row=2, column=1, padx=(0, 200), pady=0)
 
         self.space = Area(int(self.height), int(self.width))
-        self.algorithm = Algorithm(self.space, self.routers, self.clients, self.height, self.height)
-        self.space.generate_random_routers_and_clients(int(self.routers), int(self.clients), 5)
-        self.space.visualize_illustration(root2)
-        self.algorithm.run_algorithm(root2, algotype)
-
+        self.algorithm = Algorithm(self.space, self.routers, self.clients, self.height, self.height, self.second_screen)
+        self.space.generate_random_clients(int(self.clients))
+        self.algorithm.run_algorithm(tk_screen2, algotype, self.second_screen)
 
     def update_labels(self, coverage_percentage, iteration_number):
         # Update labels with the latest values
@@ -137,7 +142,6 @@ class SecondScreen(tk.Frame):
     def keep_optimization(self):
         # Implement the logic to keep the optimization process
         pass
-
 
 class OptimizationApp:
     def __init__(self, root):
@@ -153,8 +157,8 @@ class OptimizationApp:
         self.first_screen.pack()
 
     def show_second_screen(self, routers, clients, height, width, algotype):
-        SecondScreen(self.root, routers, clients, height, width, algotype)
-        #self.first_screen.destroy()  # Close the first screen
+        self.second_screen = SecondScreen(self.root, routers, clients, height, width, algotype)
+        self.second_screen.pack()
 
 def main():
     root = tk.Tk()
@@ -164,130 +168,27 @@ def main():
 if __name__ == '__main__':
         main()
 
-'''
-    def run_pso(self):
-        # PSO implementation
-        particles = initialize_particles()  # You need to implement this
+def update_visualization(self, root2, routers, radi):
+    self.canvas.get_tk_widget().delete("all")
 
-        for iteration in range(self.num_iterations):
-            for particle in particles:
-                # Update velocity and position
-                update_velocity_and_position(particle)  # You need to implement this
+    x_coords = [router[0] for router in routers]
+    y_coords = [router[1] for router in routers]
+    radius = radi
 
-                # Evaluate fitness
-                particle.fitness = evaluate_fitness(particle.position)  # You need to implement this
+    client_x_coords = [client.x for client in self.clients]
+    client_y_coords = [client.y for client in self.clients]
+    self.ax.scatter(x_coords, y_coords, marker='o', color='blue', label='Routers')
+    self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='green', label='Clients')
 
-            # Update global best
-            update_global_best(particles)  # You need to implement this
+    for x, y in zip(x_coords, y_coords):
+        circle = Circle((x, y), radius, fill=False, color='red', linestyle='dotted', alpha=0.5)
+        self.ax.add_patch(circle)
 
-        return global_best_solution   
-'''
+    self.ax.set_xlim(0, self.width)
+    self.ax.set_ylim(0, self.height)
+    self.ax.legend()
+    self.ax.grid(True)
 
-'''
-    def run_ga(self):
-        # GA implementation
-        # Initialization
-        population = initialize_population(self.population_size, self.chromosome_length)
-
-        global_best_solution = None
-        global_best_fitness = float('-inf')
-
-        for iteration in range(self.num_iterations):
-            # Evaluation
-            fitness_scores = evaluate_population(population)
-
-            # Track best solution in this iteration
-            best_index = fitness_scores.index(max(fitness_scores))
-            iteration_best_solution = population[best_index]
-            iteration_best_fitness = fitness_scores[best_index]
-
-            # Update global best if needed
-            if iteration_best_fitness > global_best_fitness:
-                global_best_solution = iteration_best_solution
-                global_best_fitness = iteration_best_fitness
-
-            # Selection, Crossover, Mutation
-            selected_parents = select_parents(population, fitness_scores, self.num_parents)
-            new_generation = crossover_and_mutate(selected_parents, len(population) - self.num_parents,
-                                                  self.mutation_rate)
-
-            # Replace old population with new generation
-            population = selected_parents + new_generation
-
-        return global_best_solution
-
-
-    def run_optimization(self):
-        if self.optimization_choice.get() == "GA":
-            best_solution = self.run_ga()
-        elif self.optimization_choice.get() == "PSO":
-            best_solution = self.run_pso()
-
-        self.plot_results(best_solution)
-
-    def plot_results(self):
-        # Create a figure and axis using matplotlib
-        fig, ax = plt.subplots()
-
-        # Plot router and user positions, connecting lines, etc.
-        # ...
-
-        # Create a canvas widget to embed the matplotlib plot in Tkinter
-        canvas = FigureCanvasTkAgg(fig, master=self.root)
-        canvas.draw()
-        canvas.get_tk_widget().pack()
-
-
-def initialize_population(pop_size, chromosome_length):
-    population = []
-    for _ in range(pop_size):
-        chromosome = [random.uniform(0, 1) for _ in range(chromosome_length)]
-        population.append(chromosome)
-    return population
-
-
-def evaluate_population(population):
-    fitness_scores = []
-    for chromosome in population:
-        # Calculate fitness based on your objective function
-        fitness = calculate_fitness(chromosome)  # You need to implement this
-        fitness_scores.append(fitness)
-    return fitness_scores
-
-
-def select_parents(population, fitness_scores, num_parents):
-    parents = []
-    # Select parents based on fitness (you can use various selection methods)
-    # For simplicity, let's use a basic proportional selection
-    total_fitness = sum(fitness_scores)
-    probabilities = [fitness / total_fitness for fitness in fitness_scores]
-
-    for _ in range(num_parents):
-        selected_index = roulette_wheel_selection(probabilities)
-        parents.append(population[selected_index])
-    return parents
-
-
-def roulette_wheel_selection(probabilities):
-    random_value = random.uniform(0, 1)
-    total_prob = 0
-    for index, prob in enumerate(probabilities):
-        total_prob += prob
-        if total_prob >= random_value:
-            return index
-
-
-def crossover_and_mutate(parents, num_offspring, mutation_rate):
-    offspring = []
-    while len(offspring) < num_offspring:
-        parent1, parent2 = random.sample(parents, 2)
-        crossover_point = random.randint(1, len(parent1) - 1)
-        child = parent1[:crossover_point] + parent2[crossover_point:]
-
-        if random.uniform(0, 1) < mutation_rate:
-            mutation_point = random.randint(0, len(child) - 1)
-            child[mutation_point] = random.uniform(0, 1)
-
-        offspring.append(child)
-    return offspring
-   '''
+    self.canvas = FigureCanvasTkAgg(self.fig, master=root2)
+    canvas_widget = self.canvas.get_tk_widget()
+    canvas_widget.pack(side=tk.TOP, padx=80, pady=0)
