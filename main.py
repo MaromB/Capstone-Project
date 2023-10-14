@@ -167,28 +167,3 @@ def main():
 
 if __name__ == '__main__':
         main()
-
-def update_visualization(self, root2, routers, radi):
-    self.canvas.get_tk_widget().delete("all")
-
-    x_coords = [router[0] for router in routers]
-    y_coords = [router[1] for router in routers]
-    radius = radi
-
-    client_x_coords = [client.x for client in self.clients]
-    client_y_coords = [client.y for client in self.clients]
-    self.ax.scatter(x_coords, y_coords, marker='o', color='blue', label='Routers')
-    self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='green', label='Clients')
-
-    for x, y in zip(x_coords, y_coords):
-        circle = Circle((x, y), radius, fill=False, color='red', linestyle='dotted', alpha=0.5)
-        self.ax.add_patch(circle)
-
-    self.ax.set_xlim(0, self.width)
-    self.ax.set_ylim(0, self.height)
-    self.ax.legend()
-    self.ax.grid(True)
-
-    self.canvas = FigureCanvasTkAgg(self.fig, master=root2)
-    canvas_widget = self.canvas.get_tk_widget()
-    canvas_widget.pack(side=tk.TOP, padx=80, pady=0)
