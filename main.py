@@ -126,8 +126,8 @@ class SecondScreen(tk.Frame):
         self.stop_button.grid(row=2, column=1, padx=(0, 200), pady=0)
 
         self.space = Area(int(self.height), int(self.width))
-        self.algorithm = Algorithm(self.space, self.routers, self.clients, self.height, self.height, self.second_screen)
         self.space.generate_random_clients(int(self.clients))
+        self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self.height, self.height, self.second_screen)
         self.algorithm.run_algorithm(tk_screen2, algotype, self.second_screen)
 
     def update_labels(self, coverage_percentage, iteration_number):

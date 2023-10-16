@@ -32,6 +32,8 @@ class Area:
         return
 
     def generate_random_clients(self, n_clients):
+        self.clients = []
+
         for _ in range(n_clients):
             # Generate random x and y coordinates for clients within the space
             x = random.uniform(0, self.width)

@@ -6,7 +6,7 @@ from areaClass import Area
 import numpy as np
 
 class Algorithm:
-    def __init__(self, space, routers, clients, height, width, second_screen):
+    def __init__(self, space, routers, clients, height, width, second_screen,):
         self.visual = None
         self.space = space
         self.routers = routers
@@ -18,10 +18,10 @@ class Algorithm:
     def ga_algorithm(self, tk_screen2, max_iterations, second_screen):
 
         current_population = self.initialize_population(20, int(self.routers), self.space.height, self.space.width)
-
+        clients = self.clients
         for iteration in range(max_iterations):
             # Evaluate the fitness of each solution in the population
-            fitness_scores = self.fitness_function(current_population, self.space.clients, 5)
+            fitness_scores = self.fitness_function(current_population, clients, 5)
             # Select parents for crossover (you can use various selection methods)
             selected_parents = self.select_parents(current_population, fitness_scores, int(len(fitness_scores)/2))
             # Create a new population using crossover
@@ -31,7 +31,7 @@ class Algorithm:
             mutated_population = self.mutate_population(new_population,0.05, self.height, self.width)
 
             # Evaluate the fitness of the mutated population
-            mutated_fitness_scores = self.fitness_function(mutated_population, self.space.clients, 5)
+            mutated_fitness_scores = self.fitness_function(mutated_population, clients, 5)
             # Replace the current population with the mutated population if it's better
             if self.is_better(mutated_fitness_scores, fitness_scores):
                 current_population = mutated_population
@@ -40,10 +40,12 @@ class Algorithm:
             # Visualize the best current state of the routers
             best_current_state = self.best_configuration_output(current_population, fitness_scores)
             self.routers = best_current_state
-            self.visual = Visual(tk_screen2, self.height, self.width)
-            self.space = Area(int(self.height), int(self.width))
-            self.visual.update_visualization(self.routers, self.clients, 5)
-            time.sleep(4)
+            if not self.visual:
+                self.visual = Visual(tk_screen2, self.height, self.width)
+
+            self.visual.update_visualization(self.routers, clients, 5)
+            time.sleep(1)
+            print("hi")
 
         second_screen.mainloop()
         return current_population
@@ -57,7 +59,6 @@ class Algorithm:
                 for client in client_locations:
                     if self.isItCovered(router, client, radius):
                         counter += 1
-                        break
             total_coverage.append(counter/len(client_locations) * 100)
 
         return total_coverage
