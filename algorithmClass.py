@@ -2,7 +2,6 @@ import math
 import random
 import time
 from visualClass import Visual
-from areaClass import Area
 import numpy as np
 
 class Algorithm:
@@ -15,43 +14,44 @@ class Algorithm:
         self.width = width
         self.second_screen = second_screen
 
+        self.current_population = self.initialize_population(20, int(self.routers), self.space.height, self.space.width)
+        self.clients = self.clients
     def ga_algorithm(self, tk_screen2, max_iterations, second_screen):
+        def iteration_callback(iteration):
+            if iteration < max_iterations:
+                # Evaluate the fitness of each solution in the population
+                fitness_scores = self.fitness_function(self.current_population, self.clients, 5)
+                # Select parents for crossover (you can use various selection methods)
+                selected_parents = self.select_parents(self.current_population, fitness_scores, int(len(fitness_scores)/2))
+                # Create a new population using crossover
+                new_population = self.router_placement_crossover(selected_parents)
 
-        current_population = self.initialize_population(20, int(self.routers), self.space.height, self.space.width)
-        clients = self.clients
-        for iteration in range(max_iterations):
-            # Evaluate the fitness of each solution in the population
-            fitness_scores = self.fitness_function(current_population, clients, 5)
-            # Select parents for crossover (you can use various selection methods)
-            selected_parents = self.select_parents(current_population, fitness_scores, int(len(fitness_scores)/2))
-            # Create a new population using crossover
-            new_population = self.router_placement_crossover(selected_parents)
+                # Apply mutation to some solutions in the new population
+                mutated_population = self.mutate_population(new_population,0.05, self.height, self.width)
 
-            # Apply mutation to some solutions in the new population
-            mutated_population = self.mutate_population(new_population,0.05, self.height, self.width)
+                # Evaluate the fitness of the mutated population
+                mutated_fitness_scores = self.fitness_function(mutated_population, self.clients, 5)
+                # Replace the current population with the mutated population if it's better
+                if self.is_better(mutated_fitness_scores, fitness_scores):
+                    self.current_population = mutated_population
+                    fitness_scores = mutated_fitness_scores
+                # Visualize the best current state of the routers
+                best_current_state = self.best_configuration_output(self.current_population, fitness_scores)
+                self.routers = best_current_state
+                if not self.visual:
+                    self.visual = Visual(tk_screen2, self.height, self.width)
 
-            # Evaluate the fitness of the mutated population
-            mutated_fitness_scores = self.fitness_function(mutated_population, clients, 5)
-            # Replace the current population with the mutated population if it's better
-            if self.is_better(mutated_fitness_scores, fitness_scores):
-                current_population = mutated_population
-                fitness_scores = mutated_fitness_scores
+                self.visual.update_visualization(self.routers, self.clients, 5)
+                print(iteration)
+                tk_screen2.after(1, iteration_callback, iteration + 1)
 
-            # Visualize the best current state of the routers
-            best_current_state = self.best_configuration_output(current_population, fitness_scores)
-            self.routers = best_current_state
-            if not self.visual:
-                self.visual = Visual(tk_screen2, self.height, self.width)
+            else:
+                print("done")
+                return self.current_population
 
-            self.visual.update_visualization(self.routers, clients, 5)
-            time.sleep(1)
-            print("hi")
-
-        second_screen.mainloop()
-        return current_population
+        iteration_callback(0)
 
     def fitness_function(self, current_population, client_locations, radius):
-
         total_coverage = []
         for routers in current_population:
             counter = 0
