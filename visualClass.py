@@ -1,5 +1,4 @@
 import time
-
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Circle
@@ -49,5 +48,5 @@ class Visual:
         self.ax.clear()
         self.canvas_widget.update()
         self.canvas.draw()
-        time.sleep(2)
+        time.sleep(0.5)
 

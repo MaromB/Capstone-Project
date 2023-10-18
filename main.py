@@ -127,7 +127,7 @@ class SecondScreen(tk.Frame):
 
         self.space = Area(int(self.height), int(self.width))
         self.space.generate_random_clients(int(self.clients))
-        self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self.height, self.height, self.second_screen)
+        self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self.height, self.width, self.second_screen)
         self.algorithm.run_algorithm(tk_screen2, algotype, self.second_screen)
 
     def update_labels(self, coverage_percentage, iteration_number):

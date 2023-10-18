@@ -1,11 +1,10 @@
 import math
 import random
-import time
 from visualClass import Visual
 import numpy as np
 
 class Algorithm:
-    def __init__(self, space, routers, clients, height, width, second_screen,):
+    def __init__(self, space, routers, clients, height, width, second_screen):
         self.visual = None
         self.space = space
         self.routers = routers
@@ -13,38 +12,35 @@ class Algorithm:
         self.height = height
         self.width = width
         self.second_screen = second_screen
-
         self.current_population = self.initialize_population(20, int(self.routers), self.space.height, self.space.width)
         self.clients = self.clients
+
     def ga_algorithm(self, tk_screen2, max_iterations, second_screen):
         def iteration_callback(iteration):
             if iteration < max_iterations:
                 # Evaluate the fitness of each solution in the population
                 fitness_scores = self.fitness_function(self.current_population, self.clients, 5)
                 # Select parents for crossover (you can use various selection methods)
-                selected_parents = self.select_parents(self.current_population, fitness_scores, int(len(fitness_scores)/2))
+                descendants = self.select_parents(self.current_population, fitness_scores, int(len(fitness_scores)/2))
                 # Create a new population using crossover
-                new_population = self.router_placement_crossover(selected_parents)
-
+                new_population = self.router_placement_crossover(descendants)
                 # Apply mutation to some solutions in the new population
-                mutated_population = self.mutate_population(new_population,0.05, self.height, self.width)
-
+                mutated_population = self.mutate_population(new_population,0.2, self.height, self.width)
+                resolved_routers = self.resolve_router_overlap_population(mutated_population, 5 , self.height, self.width)
                 # Evaluate the fitness of the mutated population
-                mutated_fitness_scores = self.fitness_function(mutated_population, self.clients, 5)
+                mutated_fitness_scores = self.fitness_function(resolved_routers, self.clients, 5)
                 # Replace the current population with the mutated population if it's better
                 if self.is_better(mutated_fitness_scores, fitness_scores):
-                    self.current_population = mutated_population
+                    self.current_population = resolved_routers
                     fitness_scores = mutated_fitness_scores
                 # Visualize the best current state of the routers
                 best_current_state = self.best_configuration_output(self.current_population, fitness_scores)
                 self.routers = best_current_state
                 if not self.visual:
                     self.visual = Visual(tk_screen2, self.height, self.width)
-
                 self.visual.update_visualization(self.routers, self.clients, 5)
-                print(iteration)
+                print("iteration number: " + str(iteration))
                 tk_screen2.after(1, iteration_callback, iteration + 1)
-
             else:
                 print("done")
                 return self.current_population
@@ -120,7 +116,7 @@ class Algorithm:
                     routers_inherited = random.sample(other_parent, routers_to_inherit)
                     cur_list.extend(routers_inherited)
 
-                if len(cur_list) == 10:
+                if len(cur_list) == routers_to_inherit + routers_from_base:
                     new_population.append(cur_list)
                     cur_list = []
 
@@ -151,6 +147,31 @@ class Algorithm:
 
         return mutated_population
 
+    def resolve_router_overlap_solution(self, routers, radius, height, width):
+        resolved_routers = []
+        resolved_routers.append(routers[0])
+        new_router = ()
+        for router in routers[1:]:
+            overlapping = False
+            if self.checkOverlapForOneRouter(router, resolved_routers, radius):
+                    new_router = self.findNewCoordinates(router, radius, height, width)
+                    overlapping = True
+            if overlapping:
+                while self.checkOverlapForOneRouter(new_router, resolved_routers, radius):
+                    new_router = self.findNewCoordinates(new_router, radius, height, width)
+                resolved_routers.append(new_router)
+            else:
+                resolved_routers.append(router)
+
+        return resolved_routers
+    def resolve_router_overlap_population(self, population, radius, height, width):
+        routers_population = []
+        for routers in population:
+            routers_without_overlap = self.resolve_router_overlap_solution(routers, radius, height, width)
+            routers_population.append(routers_without_overlap)
+
+        return routers_population
+
     def is_better(self, new_fitness_scores, old_fitness_scores):
         new_total_coverage = sum(new_fitness_scores)  # Calculate the total coverage of the new population
         old_total_coverage = sum(old_fitness_scores)
@@ -175,20 +196,39 @@ class Algorithm:
 
         return best_conf
 
-
     def run_algorithm(self, tk_screen2, algotype, second_screen):
         if algotype == 'PSO':
             self.pso_algorithm()
         elif algotype == 'GA':
-            self.ga_algorithm(tk_screen2, 100, second_screen)
+            self.ga_algorithm(tk_screen2, 1000, second_screen)
         else:
             raise ValueError("Invalid algorithm type")
 
     def isItCovered(self, router, client, radius):
-        # Calculate the Euclidean distance between the router and client
-        distance = abs(math.sqrt((router[0] - client.x) ** 2 + (router[1] - client.y) ** 2))
-
-        # Check if the distance is less than or equal to the router's coverage radius
+        distance = abs(math.sqrt(((router[0] - client.x) ** 2) + ((router[1] - client.y) ** 2)))
         return distance <= radius
+
+    def checkOverlapForOneRouter(self, router1, routers, radius):
+        for router2 in routers:
+            if self.distanceBetweenRouters(router1, router2, radius):
+                return True
+        return False
+
+    def findNewCoordinates(self, router, radius, height, width):
+
+        while True:
+            new_x = router[0] + random.randint(-radius, radius)
+            new_y = router[1] + random.randint(-radius, radius)
+            new_router = (new_x, new_y)
+            if (new_x > 0 and new_x < int(height)) and (new_y > 0 and new_y < int(width)):
+                break
+
+        return new_router
+
+    def distanceBetweenRouters(self, router1, router2, radius):
+        distance = abs(math.sqrt(((router1[0] - router2[0]) ** 2)+((router1[1] - router2[1]) ** 2)))
+        return distance <= 2*radius
+
+
 
     # def pso_algorithm(self):
