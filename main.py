@@ -77,6 +77,8 @@ class SecondScreen(tk.Frame):
         self.width = width
         self.algotype = algotype
         self.second_screen = None
+        self.iteration_number = tk.StringVar(value="Iteration number:         ")
+        self.coverage_percentage = tk.StringVar(value="Coverage:            0%")
 
         self.fig, self.ax = plt.subplots(figsize=(4, 4))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
@@ -110,16 +112,16 @@ class SecondScreen(tk.Frame):
         self.top_label = ttk.Label(info_frame1, text="Optimization of routers placements in WMNs", font=lable_font, background="light sky blue")
         self.running_algorithm = ttk.Label(info_frame2, text="Running algorithm:", font=custom_font, background="light sky blue")
         self.name_algorithm = ttk.Label(info_frame2, text=self.algotype, font=custom_font, background="light sky blue")
-        self.iteration_label = ttk.Label(info_frame2, text="Iteration number:            0", font=custom_font, background="light sky blue")
-        self.coverage_label = ttk.Label(info_frame2, text="Coverage:                       0%", font=custom_font, background="light sky blue")
+        self.iteration_label = ttk.Label(info_frame2, textvariable=self.iteration_number, font=custom_font, background="light sky blue")
+        self.coverage_label = ttk.Label(info_frame2, textvariable=self.coverage_percentage, font=custom_font, background="light sky blue")
         self.details_label = ttk.Label(info_frame3, text=f"For  {routers}  routers, {clients}  clients and  {height}  X  {width}  area size", font=custom_font, background="light sky blue")
         self.continue_button = ttk.Button(info_frame3, text="Continue", command=self.keep_optimization, style="Custom.TButton")
         self.stop_button = ttk.Button(info_frame3, text="Stop", command=self.stop_optimization, style="Custom.TButton")
 
         self.top_label.grid(row=0, column=0, padx=0, pady=10)
         self.running_algorithm.grid(row=1, column=0, padx=0, pady=10, sticky=tk.W)
-        self.name_algorithm.grid(row=1, column=1, padx=0, pady=0, sticky=tk.W)
-        self.iteration_label.grid(row=2, column=0, padx=0, pady=10, sticky=tk.W)
+        self.name_algorithm.grid(row=1, column=0, padx=(170, 0), pady=0, sticky=tk.W)
+        self.iteration_label.grid(row=2, column=0, padx=(0, 170), pady=10, sticky=tk.W)
         self.coverage_label.grid(row=3, column=0, padx=0, pady=10, sticky=tk.W)
         self.details_label.grid(row=1, column=1, padx=0, pady=20)
         self.continue_button.grid(row=2, column=1, padx=(200, 0), pady=0)
@@ -127,13 +129,9 @@ class SecondScreen(tk.Frame):
 
         self.space = Area(int(self.height), int(self.width))
         self.space.generate_random_clients(int(self.clients))
-        self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self.height, self.width, self.second_screen)
-        self.algorithm.run_algorithm(tk_screen2, algotype, self.second_screen)
-
-    def update_labels(self, coverage_percentage, iteration_number):
-        # Update labels with the latest values
-        self.iteration_label.config(text=f"Iteration:                {iteration_number}")
-        self.coverage_label.config(text=f"Coverage:            {coverage_percentage}%")
+        self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self.height, self.width,
+                                   self)
+        self.algorithm.run_algorithm(tk_screen2, algotype)
 
     def stop_optimization(self):
         # Implement the logic to stop the optimization process

@@ -15,7 +15,7 @@ class Algorithm:
         self.current_population = self.initialize_population(20, int(self.routers), self.space.height, self.space.width)
         self.clients = self.clients
 
-    def ga_algorithm(self, tk_screen2, max_iterations, second_screen):
+    def ga_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
             if iteration < max_iterations:
                 # Evaluate the fitness of each solution in the population
@@ -39,13 +39,14 @@ class Algorithm:
                 if not self.visual:
                     self.visual = Visual(tk_screen2, self.height, self.width)
                 self.visual.update_visualization(self.routers, self.clients, 5)
-                print("iteration number: " + str(iteration))
                 tk_screen2.after(1, iteration_callback, iteration + 1)
+                self.second_screen.iteration_number.set("Iteration number:       " + str(iteration))
+                #self.second_screen.coverage_percentage.set("Coverage:            " + str(coverage) + "%")
             else:
                 print("done")
                 return self.current_population
 
-        iteration_callback(0)
+        iteration_callback(1)
 
     def fitness_function(self, current_population, client_locations, radius):
         total_coverage = []
@@ -196,11 +197,11 @@ class Algorithm:
 
         return best_conf
 
-    def run_algorithm(self, tk_screen2, algotype, second_screen):
+    def run_algorithm(self, tk_screen2, algotype):
         if algotype == 'PSO':
             self.pso_algorithm()
         elif algotype == 'GA':
-            self.ga_algorithm(tk_screen2, 1000, second_screen)
+            self.ga_algorithm(tk_screen2, 1000)
         else:
             raise ValueError("Invalid algorithm type")
 
@@ -222,7 +223,6 @@ class Algorithm:
             new_router = (new_x, new_y)
             if (new_x > 0 and new_x < int(height)) and (new_y > 0 and new_y < int(width)):
                 break
-
         return new_router
 
     def distanceBetweenRouters(self, router1, router2, radius):
