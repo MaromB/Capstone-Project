@@ -24,8 +24,8 @@ class Area:
 
         for _ in range(n_clients):
             # Generate random x and y coordinates for clients within the space
-            x = random.uniform(0, self.width)
             y = random.uniform(0, self.height)
+            x = random.uniform(0, self.width)
             # Create a client with the random coordinates
             client = Client(x, y)
             self.clients.append(client)
@@ -36,9 +36,8 @@ class Area:
 
         for _ in range(n_clients):
             # Generate random x and y coordinates for clients within the space
-            x = random.uniform(0, self.width)
             y = random.uniform(0, self.height)
+            x = random.uniform(0, self.width)
             # Create a client with the random coordinates
             client = Client(x, y)
             self.clients.append(client)
-        return
