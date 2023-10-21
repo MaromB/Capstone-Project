@@ -5,6 +5,7 @@ from algorithmClass import Algorithm
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+
 class FirstScreen(tk.Frame):
     def __init__(self, parent, show_second_screen):
         super().__init__(parent)
@@ -17,7 +18,7 @@ class FirstScreen(tk.Frame):
         y = (screen_height - 600) // 2
 
         # Set window size and position
-        self.master.geometry(f'1000x700+{x + 100}+{y-50}')
+        self.master.geometry(f'1000x700+{x + 100}+{y - 50}')
         style = ttk.Style()
         style.configure("Custom.TFrame", background="light sky blue")
 
@@ -30,9 +31,12 @@ class FirstScreen(tk.Frame):
         self.pack(fill=tk.BOTH, expand=True)
 
         self.label_Space = ttk.Label(self, text=" ", background="light sky blue")
-        self.label_of_project = ttk.Label(self, text="Optimization of routers placements in WMNs:", font=custom_font2, background="light sky blue")
-        self.label_Following = ttk.Label(self, text="Please insert the following:", font=custom_font, background="light sky blue")
-        self.label_Routers = ttk.Label(self, text="Number of mesh routers:", font=custom_font, background="light sky blue")
+        self.label_of_project = ttk.Label(self, text="Optimization of routers placements in WMNs:", font=custom_font2,
+                                          background="light sky blue")
+        self.label_Following = ttk.Label(self, text="Please insert the following:", font=custom_font,
+                                         background="light sky blue")
+        self.label_Routers = ttk.Label(self, text="Number of mesh routers:", font=custom_font,
+                                       background="light sky blue")
         self.entry_Routers = ttk.Entry(self, width=7)
         self.label_Clients = ttk.Label(self, text="Numer of clients:", font=custom_font, background="light sky blue")
         self.entry_Clients = ttk.Entry(self, width=7)
@@ -72,6 +76,7 @@ class FirstScreen(tk.Frame):
         algotype = self.algorithm_combobox.get()
         self.show_second_screen(routers, clients, height, width, algotype)
 
+
 class SecondScreen(tk.Frame):
     def __init__(self, parent, routers, clients, height, width, algotype):
         super().__init__(parent)
@@ -89,39 +94,47 @@ class SecondScreen(tk.Frame):
                                    self)
         self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
+        self.is_paused = False
 
-        tk_screen2 = tk.Toplevel()  # Create a new window (second screen)
-        tk_screen2.title("WMNs Optimization - map")
-        tk_screen2.configure(bg="light sky blue")
+        self.tk_screen2 = tk.Toplevel()  # Create a new window (second screen)
+        self.tk_screen2.title("WMNs Optimization - map")
+        self.tk_screen2.configure(bg="light sky blue")
         style = ttk.Style()
         style.configure("Custom.TFrame", background="light sky blue")
 
         # Get screen width and height
-        screen_width = tk_screen2.winfo_screenwidth()
-        screen_height = tk_screen2.winfo_screenheight()
+        screen_width = self.tk_screen2.winfo_screenwidth()
+        screen_height = self.tk_screen2.winfo_screenheight()
 
         x = (screen_width - 800) // 2
         y = (screen_height - 600) // 2
 
         # Set window size and position
-        tk_screen2.geometry(f'1000x700+{x + 100}+{y - 50}')
+        self.tk_screen2.geometry(f'1000x700+{x + 100}+{y - 50}')
         lable_font = ("Ariel", 20, "bold")
         custom_font = ("Ariel", 14)
 
-        info_frame1 = ttk.Frame(tk_screen2, style="Custom.TFrame")
+        info_frame1 = ttk.Frame(self.tk_screen2, style="Custom.TFrame")
         info_frame1.pack(side=tk.TOP, anchor=tk.S, padx=80, pady=20)
-        info_frame2 = ttk.Frame(tk_screen2, style="Custom.TFrame")
+        info_frame2 = ttk.Frame(self.tk_screen2, style="Custom.TFrame")
         info_frame2.pack(side=tk.TOP, anchor=tk.W, padx=20, pady=20)
-        info_frame3 = ttk.Frame(tk_screen2, style="Custom.TFrame")
+        info_frame3 = ttk.Frame(self.tk_screen2, style="Custom.TFrame")
         info_frame3.pack(side=tk.BOTTOM, anchor=tk.S, padx=0, pady=10)
-        self.top_label = ttk.Label(info_frame1, text="Optimization of routers placements in WMNs", font=lable_font, background="light sky blue")
-        self.running_algorithm = ttk.Label(info_frame2, text="Running algorithm:", font=custom_font, background="light sky blue")
+        self.top_label = ttk.Label(info_frame1, text="Optimization of routers placements in WMNs", font=lable_font,
+                                   background="light sky blue")
+        self.running_algorithm = ttk.Label(info_frame2, text="Running algorithm:", font=custom_font,
+                                           background="light sky blue")
         self.name_algorithm = ttk.Label(info_frame2, text=self.algotype, font=custom_font, background="light sky blue")
-        self.iteration_label = ttk.Label(info_frame2, textvariable=self.iteration_number, font=custom_font, background="light sky blue")
-        self.coverage_label = ttk.Label(info_frame2, textvariable=self.coverage_percentage, font=custom_font, background="light sky blue")
-        self.details_label = ttk.Label(info_frame3, text=f"For  {routers}  routers, {clients}  clients and  {height}  X  {width}  area size", font=custom_font, background="light sky blue")
-        self.continue_button = ttk.Button(info_frame3, text="Continue", command=self.algorithm.continue_button, style="Custom.TButton")
-        self.pause_button = ttk.Button(info_frame3, text="Pause", command=self.algorithm.pause_button, style="Custom.TButton")
+        self.iteration_label = ttk.Label(info_frame2, textvariable=self.iteration_number, font=custom_font,
+                                         background="light sky blue")
+        self.coverage_label = ttk.Label(info_frame2, textvariable=self.coverage_percentage, font=custom_font,
+                                        background="light sky blue")
+        self.details_label = ttk.Label(info_frame3,
+                                       text=f"For  {routers}  routers, {clients}  clients and  {height}  X  {width}  area size",
+                                       font=custom_font, background="light sky blue")
+        self.stop_button = ttk.Button(info_frame3, text="Stop", command=self.stop_button, style="Custom.TButton")
+        self.pause_continue_button = ttk.Button(info_frame3, text="Pause", command=self.toggle_pause_continue,
+                                       style="Custom.TButton")
 
         self.top_label.grid(row=0, column=0, padx=0, pady=5)
         self.running_algorithm.grid(row=1, column=0, padx=0, pady=0, sticky=tk.W)
@@ -129,31 +142,50 @@ class SecondScreen(tk.Frame):
         self.iteration_label.grid(row=2, column=0, padx=(0, 170), pady=5, sticky=tk.W)
         self.coverage_label.grid(row=3, column=0, padx=0, pady=0, sticky=tk.W)
         self.details_label.grid(row=1, column=1, padx=0, pady=20)
-        self.continue_button.grid(row=2, column=1, padx=(200, 0), pady=0)
-        self.pause_button.grid(row=2, column=1, padx=(0, 200), pady=0)
+        self.stop_button.grid(row=2, column=1, padx=(200, 0), pady=0)
+        self.pause_continue_button.grid(row=2, column=1, padx=(0, 200), pady=0)
 
-        self.algorithm.run_algorithm(tk_screen2, algotype)
+        self.algorithm.run_algorithm(self.tk_screen2, algotype)
+
+    def toggle_pause_continue(self):
+        if self.is_paused:
+            self.is_paused = False
+            self.pause_continue_button.config(text="Pause")
+            self.algorithm.continue_button()
+        else:
+            self.is_paused = True
+            self.pause_continue_button.config(text="Continue")
+            self.algorithm.pause_button()
+
+    def stop_button(self):
+        self.tk_screen2.destroy()
+        root = tk.Tk()
+        OptimizationApp(root)
 
 class OptimizationApp:
     def __init__(self, root):
+        self.second_screen = None
         self.root = root
         self.root.title("WMNs Optimization")
 
-        # Initialize parameters
         self.routers = None
         self.clients = None
 
         # Create an instance of the FirstScreen class and show it
         self.first_screen = FirstScreen(self.root, self.show_second_screen)
         self.first_screen.pack()
+
     def show_second_screen(self, routers, clients, height, width, algotype):
         self.second_screen = SecondScreen(self.root, routers, clients, height, width, algotype)
         self.second_screen.pack()
+        self.root.withdraw()
+
 
 def main():
     root = tk.Tk()
     OptimizationApp(root)
     root.mainloop()
 
+
 if __name__ == '__main__':
-        main()
+    main()

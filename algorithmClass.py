@@ -5,6 +5,7 @@ import time
 from visualClass import Visual
 import numpy as np
 
+
 class Algorithm:
     def __init__(self, space, routers, clients, height, width, second_screen):
         self.visual = None
@@ -15,9 +16,7 @@ class Algorithm:
         self.width = width
         self.second_screen = second_screen
         self.current_population = self.initialize_population(20, int(self.routers), self.space.height, self.space.width)
-        self.clients = self.clients
         self.thread = None
-        self.is_running = True
         self.pause_event = threading.Event()
 
     def ga_algorithm(self, tk_screen2, max_iterations):
@@ -44,15 +43,17 @@ class Algorithm:
                                                                                    fitness_scores)
                 if not self.visual:
                     self.visual = Visual(tk_screen2, self.height, self.width)
-                self.second_screen.iteration_number.set("Iteration number:       " + str(iteration+1))
+                self.second_screen.iteration_number.set("Iteration number:       " + str(iteration + 1))
                 self.second_screen.coverage_percentage.set("Coverage:            " + str(coverage_percentage) + "%")
                 self.visual.mark_covered_clients(self.routers, self.clients, 5)
                 self.visual.update_visualization(self.routers, self.clients, 5)
 
                 while self.pause_event.is_set():
                     time.sleep(0.1)
+
             print("done")
             return self.current_population
+
         iteration_callback(1)
 
     def fitness_function(self, current_population, client_locations, radius):
@@ -187,7 +188,7 @@ class Algorithm:
         index = 0
         coverage_percentage = 0
         for i in range(len(current_population)):
-            if fitness_scores[index] < fitness_scores[i]:
+            if fitness_scores[index] <= fitness_scores[i]:
                 index = i
                 coverage_percentage = fitness_scores[i]
         best_conf = current_population[index]
@@ -224,6 +225,7 @@ class Algorithm:
 
     def continue_button(self):
         self.pause_event.clear()
+
     def pause_button(self):
         self.pause_event.set()
 

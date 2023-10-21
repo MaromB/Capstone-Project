@@ -48,14 +48,14 @@ class Visual:
 
         self.ax.set_xlim(0, int(self.height))
         self.ax.set_ylim(0, int(self.width))
-        #self.fig.subplots_adjust(right=0.8, left=0.8)
-        self.ax.legend(['Routers', 'Clients covered', 'Clients not covered'], loc='upper right', bbox_to_anchor=(1.0
-                                                                                                                 , 1.0))
+        self.fig.subplots_adjust(right=0.8, top=0.8)
+        self.ax.legend(['Routers', 'Clients covered', 'Clients not covered'], loc='upper right', bbox_to_anchor=(1.3
+                                                                                                                 , 1.3))
         self.ax.grid(True)
 
         self.canvas_widget.update()
         self.canvas.draw()
-        time.sleep(0.5)
+        time.sleep(0.4)
 
     def mark_covered_clients(self, routers, clients, radius):
         self.routers = routers
