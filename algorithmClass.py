@@ -7,7 +7,7 @@ import numpy as np
 
 
 class Algorithm:
-    def __init__(self, space, routers, clients, height, width, second_screen):
+    def __init__(self, space, routers, clients, height, width, second_screen, boundary_coordinates):
         self.visual = None
         self.space = space
         self.routers = routers
@@ -15,11 +15,14 @@ class Algorithm:
         self.height = height
         self.width = width
         self.second_screen = second_screen
+        self.boundary_coordinates = boundary_coordinates
         self.current_population = self.initialize_population(20, int(self.routers), self.space.height, self.space.width)
+        self.current_population_new = self.initialize_population_new(20, int(self.routers), self.boundary_coordinates)
+
         self.thread = None
         self.pause_event = threading.Event()
 
-    def ga_algorithm(self, tk_screen2, max_iterations):
+    def ga_algorithm(self, tk_screen2, max_iterations, boundary_coordinates):
         def iteration_callback(iteration):
             for iteration in range(max_iterations):
                 # Evaluate the fitness of each solution in the population
@@ -68,6 +71,17 @@ class Algorithm:
         return total_coverage
 
     def initialize_population(self, num_solutions, routers, height, width):
+        population = []
+        for _ in range(num_solutions):
+            solution = []
+            for _ in range(routers):
+                y = random.randint(0, height)
+                x = random.randint(0, width)
+                solution.append((x, y))
+            population.append(solution)
+        return population
+
+    def initialize_population_new(self, num_solutions, routers, boundary_coordinates):
         population = []
         for _ in range(num_solutions):
             solution = []
@@ -194,11 +208,11 @@ class Algorithm:
         best_conf = current_population[index]
         return best_conf, int(coverage_percentage)
 
-    def run_algorithm(self, tk_screen2, algotype):
+    def run_algorithm(self, tk_screen2, algotype, boundary_coordinates):
         if algotype == 'PSO':
             self.pso_algorithm()
         elif algotype == 'GA':
-            self.thread = threading.Thread(target=self.ga_algorithm, args=(tk_screen2, 10000))
+            self.thread = threading.Thread(target=self.ga_algorithm, args=(tk_screen2, 10000, boundary_coordinates))
             self.thread.start()
         else:
             raise ValueError("Invalid algorithm type")

@@ -3,7 +3,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Circle
 import tkinter as tk
-
 import algorithmClass
 
 
@@ -36,14 +35,14 @@ class Visual:
 
         client_x_coords = [client.x for client in self.clients if client.in_range]
         client_y_coords = [client.y for client in self.clients if client.in_range]
-        self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='black', label='Clients covered')
+        self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='green', label='Clients covered')
 
         client_x_coords = [client.x for client in self.clients if not client.in_range]
         client_y_coords = [client.y for client in self.clients if not client.in_range]
-        self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='green', label='Clients not covered')
+        self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='black', label='Clients not covered')
 
         for x, y in zip(x_coords, y_coords):
-            circle = Circle((x, y), self.radius, fill=False, color='red', linestyle='dotted', alpha=0.5)
+            circle = Circle((x, y), self.radius, fill=False, color='red', linestyle='dotted', alpha=0.5, linewidth=2)
             self.ax.add_patch(circle)
 
         self.ax.set_xlim(0, int(self.height))

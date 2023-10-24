@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from areaClass import Area
 from algorithmClass import Algorithm
+from imageClass import ImageManager
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -49,6 +50,9 @@ class FirstScreen(tk.Frame):
         self.label_algorithem = ttk.Label(self, text="Algorithem:", font=custom_font, background="light sky blue")
         self.algorithm_combobox = ttk.Combobox(self, width=7)
         self.algorithm_combobox['values'] = ('', 'GA', 'PSO')
+        self.choose_photo = ttk.Label(self, text="Choosing a structure:", font=custom_font, background="light sky blue")
+        self.photo_combobox = ttk.Combobox(self, width=7)
+        self.photo_combobox['values'] = ('', '1', '2', '3', '4')
         self.run_button = ttk.Button(self, text="Run", command=self.switch_to_second_screen, style="Custom.TButton")
 
         self.label_Space.grid(row=1, column=0, padx=0, pady=40, sticky=tk.W)
@@ -66,7 +70,9 @@ class FirstScreen(tk.Frame):
         self.entry_SizeL.grid(row=6, column=5, padx=0, pady=0, sticky=tk.W)
         self.label_algorithem.grid(row=7, column=0, padx=20, pady=15, sticky=tk.W)
         self.algorithm_combobox.grid(row=7, column=1, padx=0, pady=0)
-        self.run_button.grid(row=8, columnspan=100, padx=400, pady=100)
+        self.choose_photo.grid(row=8, column=0, padx=20, pady=0, sticky=tk.W)
+        self.photo_combobox.grid(row=8, column=1, padx=20, pady=15, sticky=tk.W)
+        self.run_button.grid(row=9, columnspan=100, padx=400, pady=100)
 
     def switch_to_second_screen(self):
         routers = self.entry_Routers.get()
@@ -90,8 +96,10 @@ class SecondScreen(tk.Frame):
         self.coverage_percentage = tk.StringVar(value="Coverage:            0%")
         self.space = Area(int(self.height), int(self.width))
         self.space.generate_random_clients(int(self.clients))
+        self.boundary_coordinates = []
+        self.imageManager = ImageManager()
         self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self.height, self.width,
-                                   self)
+                                   self, self.boundary_coordinates)
         self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.is_paused = False
@@ -144,8 +152,9 @@ class SecondScreen(tk.Frame):
         self.details_label.grid(row=1, column=1, padx=0, pady=20)
         self.stop_button.grid(row=2, column=1, padx=(200, 0), pady=0)
         self.pause_continue_button.grid(row=2, column=1, padx=(0, 200), pady=0)
-
-        self.algorithm.run_algorithm(self.tk_screen2, algotype)
+        self.imageManager.load_images()
+        boundary_coordinates = self.imageManager.find_external_contours()
+        self.algorithm.run_algorithm(self.tk_screen2, algotype, boundary_coordinates)
 
     def toggle_pause_continue(self):
         if self.is_paused:
