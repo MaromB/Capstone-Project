@@ -1,4 +1,7 @@
 import random
+
+import cv2
+
 from routerClass import Router
 from clientClass import Client
 
@@ -41,3 +44,16 @@ class Area:
             # Create a client with the random coordinates
             client = Client(x, y)
             self.clients.append(client)
+
+    def generate_random_clients_for_photo(self, n_clients, shape_polygon):
+        self.clients = []
+        while True:
+            y = random.uniform(0, 1800)
+            x = random.uniform(0, 1800)
+            point = (x, y)
+            is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
+            if is_inside == 1:
+                self.clients.append(Client(x, y))
+            if len(self.clients) == n_clients:
+                break
+

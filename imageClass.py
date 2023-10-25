@@ -1,3 +1,4 @@
+import math
 import cv2
 import os
 import numpy as np
@@ -21,8 +22,10 @@ class ImageManager:
             image = cv2.imread(images_path)
             self.images.append(image)
 
-    def find_structure_shape(self):
-        self.selected_image = self.images[10]
+    def find_structure_shape(self, num_of_photo):
+        self.selected_image = self.images[num_of_photo]
+        shape_boundary = []
+
         if self.selected_image is not None:
             gray_image = cv2.cvtColor(self.selected_image, cv2.COLOR_BGR2GRAY)
             _, thresholded = cv2.threshold(gray_image, 200, 255, cv2.THRESH_BINARY_INV)
@@ -30,35 +33,41 @@ class ImageManager:
             contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             if contours:
+                # Find the largest contour
                 largest_contour = max(contours, key=cv2.contourArea)
-                canvas = np.zeros(self.selected_image.shape, dtype=np.uint8)
-                cv2.drawContours(canvas, [largest_contour], -1, (0, 0, 255), 1)
-                result = cv2.add(self.selected_image, canvas)
-                cv2.imshow("Structure Shape", result)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
 
-    def is_point_inside_polygon(point, polygon):
-        x, y = point
-        n = len(polygon)
-        inside = False
+                # Convert largest_contour to a NumPy array
+                largest_contour = np.array(largest_contour)
 
-        p1x, p1y = polygon[0]
-        for i in range(n + 1):
-            p2x, p2y = polygon[i % n]
-            if y > min(p1y, p2y):
-                if y <= max(p1y, p2y):
-                    if x <= max(p1x, p2x):
-                        if p1y != p2y:
-                            x_intersection = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                            if p1x == p2x or x <= x_intersection:
-                                inside = not inside
-            p1x, p1y = p2x, p2y
+                # Extract the coordinates of the largest contour
+                for point in largest_contour:
+                    x, y = point[0]
+                    shape_boundary.append((x, y))
+                distance_threshold = 5
 
-        return inside
+        simplified_shape_boundary = self.simplify_points(shape_boundary, distance_threshold)
+
+        shape_polygon = cv2.approxPolyDP(np.array(simplified_shape_boundary), epsilon=3, closed=True)
+        #point_to_check = (100, 803)
+        #is_inside = cv2.pointPolygonTest(shape_polygon, point_to_check, measureDist=False)
+
+        return shape_polygon
+
+
+    def simplify_points(self, point_list, distance_threshold):
+        simplified_list = []
+        if len(point_list) > 0:
+            simplified_list.append(point_list[0])  # Always keep the first point
+        for i in range(1, len(point_list)):
+            x1, y1 = point_list[i]
+            x2, y2 = simplified_list[-1]
+            distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+            if distance >= distance_threshold:
+                simplified_list.append((x1, y1))
+        return simplified_list
+
 
 if __name__ == '__main__':
     image_manager = ImageManager()
-    image_path = "your_image.jpg"  # Replace with the path to your image
     image_manager.load_images()
-    image_manager.find_structure_shape()
+    image_manager.find_structure_shape(1)

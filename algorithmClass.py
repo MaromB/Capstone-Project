@@ -2,12 +2,13 @@ import math
 import random
 import threading
 import time
+import cv2
 from visualClass import Visual
 import numpy as np
 
 
 class Algorithm:
-    def __init__(self, space, routers, clients, height, width, second_screen, boundary_coordinates):
+    def __init__(self, space, routers, clients, height, width, second_screen, num_photo, shape_polygon, check_image):
         self.visual = None
         self.space = space
         self.routers = routers
@@ -15,16 +16,20 @@ class Algorithm:
         self.height = height
         self.width = width
         self.second_screen = second_screen
-        self.boundary_coordinates = boundary_coordinates
-        self.current_population = self.initialize_population(20, int(self.routers), self.space.height, self.space.width)
-        self.current_population_new = self.initialize_population_new(20, int(self.routers), self.boundary_coordinates)
-
+        self.num_photo = num_photo
+        self.shape_polygon = shape_polygon
+        self.check_image = check_image
         self.thread = None
         self.pause_event = threading.Event()
 
-    def ga_algorithm(self, tk_screen2, max_iterations, boundary_coordinates):
+    def ga_algorithm(self, tk_screen2, max_iterations, shape_polygon):
         def iteration_callback(iteration):
             for iteration in range(max_iterations):
+                if iteration == 1 and self.check_image:
+                    self.current_population = self.initialize_population_for_photo(20, int(self.routers), shape_polygon)
+                elif iteration == 1 and not self.check_image:
+                    self.current_population = self.initialize_population(20, int(self.routers), self.space.height,
+                                                                         self.space.width)
                 # Evaluate the fitness of each solution in the population
                 fitness_scores = self.fitness_function(self.current_population, self.clients, 5)
                 # Select parents for crossover (you can use various selection methods)
@@ -45,11 +50,15 @@ class Algorithm:
                 self.routers, coverage_percentage = self.best_configuration_output(self.current_population,
                                                                                    fitness_scores)
                 if not self.visual:
-                    self.visual = Visual(tk_screen2, self.height, self.width)
+                    self.visual = Visual(tk_screen2)
                 self.second_screen.iteration_number.set("Iteration number:       " + str(iteration + 1))
                 self.second_screen.coverage_percentage.set("Coverage:            " + str(coverage_percentage) + "%")
                 self.visual.mark_covered_clients(self.routers, self.clients, 5)
-                self.visual.update_visualization(self.routers, self.clients, 5)
+                if self.check_image:
+                    self.visual.update_visualization_for_photo(self.routers, self.clients, 5, self.num_photo)
+                elif not self.check_image:
+                    self.visual.update_visualization_for_rectangle(self.routers, self.clients, 5, self.height,
+                                                                   self.width)
 
                 while self.pause_event.is_set():
                     time.sleep(0.1)
@@ -81,14 +90,19 @@ class Algorithm:
             population.append(solution)
         return population
 
-    def initialize_population_new(self, num_solutions, routers, boundary_coordinates):
+    def initialize_population_for_photo(self, num_solutions, routers, shape_polygon):
         population = []
         for _ in range(num_solutions):
             solution = []
-            for _ in range(routers):
-                y = random.randint(0, height)
-                x = random.randint(0, width)
-                solution.append((x, y))
+            while True:
+                y = random.randint(0, 1800)
+                x = random.randint(0, 1800)
+                point = (x, y)
+                is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
+                if is_inside == 1:
+                    solution.append((x, y))
+                if len(solution) == routers:
+                    break
             population.append(solution)
         return population
 
@@ -208,11 +222,12 @@ class Algorithm:
         best_conf = current_population[index]
         return best_conf, int(coverage_percentage)
 
-    def run_algorithm(self, tk_screen2, algotype, boundary_coordinates):
-        if algotype == 'PSO':
-            self.pso_algorithm()
-        elif algotype == 'GA':
-            self.thread = threading.Thread(target=self.ga_algorithm, args=(tk_screen2, 10000, boundary_coordinates))
+    def run_algorithm(self, tk_screen2, algotype):
+        #if algotype == 'PSO':
+            #self.pso_algorithm()
+        #elif
+        if algotype == 'GA':
+            self.thread = threading.Thread(target=self.ga_algorithm, args=(tk_screen2, 10000))
             self.thread.start()
         else:
             raise ValueError("Invalid algorithm type")

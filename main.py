@@ -21,15 +21,16 @@ class FirstScreen(tk.Frame):
         # Set window size and position
         self.master.geometry(f'1000x700+{x + 100}+{y - 50}')
         style = ttk.Style()
-        style.configure("Custom.TFrame", background="light sky blue")
 
         custom_font = ("Ariel", 18)
         custom_font2 = ("Ariel", 20, "bold")
         custom_font3 = ("Ariel", 12)
-        style.configure("Custom.TButton", font=custom_font)
+        style.configure("Custom.TButton", font=custom_font, background="light sky blue")
+        style.configure("Checkbutton", font=custom_font, background="light sky blue")
         self.configure(bg="light sky blue")
 
         self.pack(fill=tk.BOTH, expand=True)
+        self.check_image = tk.BooleanVar()
 
         self.label_Space = ttk.Label(self, text=" ", background="light sky blue")
         self.label_of_project = ttk.Label(self, text="Optimization of routers placements in WMNs:", font=custom_font2,
@@ -52,8 +53,10 @@ class FirstScreen(tk.Frame):
         self.algorithm_combobox['values'] = ('', 'GA', 'PSO')
         self.choose_photo = ttk.Label(self, text="Choosing a structure:", font=custom_font, background="light sky blue")
         self.photo_combobox = ttk.Combobox(self, width=7)
-        self.photo_combobox['values'] = ('', '1', '2', '3', '4')
+        self.photo_combobox['values'] = ('', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13')
         self.run_button = ttk.Button(self, text="Run", command=self.switch_to_second_screen, style="Custom.TButton")
+        self.Checkbutton = tk.Checkbutton(self, text="Image?", variable=self.check_image, onvalue=True, offvalue=False,
+                                          background="light sky blue", font=custom_font3)
 
         self.label_Space.grid(row=1, column=0, padx=0, pady=40, sticky=tk.W)
         self.label_of_project.grid(row=2, column=0, padx=18, pady=30, sticky=tk.W)
@@ -72,6 +75,7 @@ class FirstScreen(tk.Frame):
         self.algorithm_combobox.grid(row=7, column=1, padx=0, pady=0)
         self.choose_photo.grid(row=8, column=0, padx=20, pady=0, sticky=tk.W)
         self.photo_combobox.grid(row=8, column=1, padx=20, pady=15, sticky=tk.W)
+        self.Checkbutton.grid(row=8, column=2, padx=0, pady=0, sticky=tk.W)
         self.run_button.grid(row=9, columnspan=100, padx=400, pady=100)
 
     def switch_to_second_screen(self):
@@ -80,26 +84,32 @@ class FirstScreen(tk.Frame):
         height = self.entry_SizeH.get()
         width = self.entry_SizeL.get()
         algotype = self.algorithm_combobox.get()
-        self.show_second_screen(routers, clients, height, width, algotype)
+        num_photo = self.photo_combobox.get()
+        self.show_second_screen(routers, clients, height, width, algotype, num_photo, self.check_image)
 
 
 class SecondScreen(tk.Frame):
-    def __init__(self, parent, routers, clients, height, width, algotype):
+    def __init__(self, parent, routers, clients, height, width, algotype, num_photo, check_image):
         super().__init__(parent)
         self.routers = routers
         self.clients = clients
         self.height = height
         self.width = width
         self.algotype = algotype
+        self.num_photo = num_photo
+        self.check_image = check_image
         self.second_screen = None
         self.iteration_number = tk.StringVar(value="Iteration number:         ")
         self.coverage_percentage = tk.StringVar(value="Coverage:            0%")
         self.space = Area(int(self.height), int(self.width))
-        self.space.generate_random_clients(int(self.clients))
-        self.boundary_coordinates = []
         self.imageManager = ImageManager()
+        self.shape_polygon = self.imageManager.find_structure_shape(self.num_photo)
+        if check_image:
+            self.space.generate_random_clients_for_photo(int(self.clients), self.shape_polygon)
+        else:
+            self.space.generate_random_clients(int(self.clients))
         self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self.height, self.width,
-                                   self, self.boundary_coordinates)
+                                   self, self.num_photo, self.shape_polygon, self.check_image)
         self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.is_paused = False
@@ -153,8 +163,8 @@ class SecondScreen(tk.Frame):
         self.stop_button.grid(row=2, column=1, padx=(200, 0), pady=0)
         self.pause_continue_button.grid(row=2, column=1, padx=(0, 200), pady=0)
         self.imageManager.load_images()
-        boundary_coordinates = self.imageManager.find_external_contours()
-        self.algorithm.run_algorithm(self.tk_screen2, algotype, boundary_coordinates)
+        self.algorithm.run_algorithm(self.tk_screen2, algotype)
+
 
     def toggle_pause_continue(self):
         if self.is_paused:
@@ -184,8 +194,8 @@ class OptimizationApp:
         self.first_screen = FirstScreen(self.root, self.show_second_screen)
         self.first_screen.pack()
 
-    def show_second_screen(self, routers, clients, height, width, algotype):
-        self.second_screen = SecondScreen(self.root, routers, clients, height, width, algotype)
+    def show_second_screen(self, routers, clients, height, width, algotype, num_photo, check_image):
+        self.second_screen = SecondScreen(self.root, routers, clients, height, width, algotype, num_photo, check_image)
         self.second_screen.pack()
         self.root.withdraw()
 

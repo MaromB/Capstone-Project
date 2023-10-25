@@ -5,26 +5,32 @@ from matplotlib.patches import Circle
 import tkinter as tk
 import algorithmClass
 
+from imageClass import ImageManager
+
 
 class Visual:
-    def __init__(self, tk_screen2, height, width):
+    def __init__(self, tk_screen2):
+        self.width = None
+        self.height = None
         self.radius = None
         self.clients = None
         self.routers = None
         self.tk_screen2 = tk_screen2
-        self.height = height
-        self.width = width
+
         self.fig = Figure(figsize=(5, 5))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.tk_screen2)
         self.ax = self.canvas.figure.add_subplot(111)
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(side=tk.TOP, padx=80, pady=0)
         self.router_plot = None
+        self.image.update_visualization_for_photo(self.routers, self.clients, 5, self.num_photo)
 
-    def update_visualization(self, routers, clients, radius):
+    def update_visualization_for_rectangle(self, routers, clients, radius, height, width):
         self.routers = routers
         self.clients = clients
         self.radius = radius
+        self.height = height
+        self.width = width
 
         self.canvas_widget = self.canvas.get_tk_widget()
         self.ax.clear()
@@ -56,6 +62,14 @@ class Visual:
         self.canvas.draw()
         time.sleep(0.4)
 
+    def update_visualization_for_photo(self, routers, clients, radius, num_photo, polygon):
+        self.routers = routers
+        self.clients = clients
+        self.radius = radius
+        self.height = height
+        self.width = width
+        pass
+
     def mark_covered_clients(self, routers, clients, radius):
         self.routers = routers
         self.clients = clients
@@ -66,3 +80,4 @@ class Visual:
             for router in self.routers:
                 if algorithmClass.Algorithm.isItCovered(self, router, client, radius):
                     client.in_range = True
+
