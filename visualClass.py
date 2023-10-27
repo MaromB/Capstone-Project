@@ -5,11 +5,10 @@ from matplotlib.patches import Circle
 import tkinter as tk
 import algorithmClass
 
-from imageClass import ImageManager
-
 
 class Visual:
     def __init__(self, tk_screen2):
+        self.original_image = None
         self.width = None
         self.height = None
         self.radius = None
@@ -17,13 +16,12 @@ class Visual:
         self.routers = None
         self.tk_screen2 = tk_screen2
 
-        self.fig = Figure(figsize=(5, 5))
+        self.fig = Figure(figsize=(7, 7))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.tk_screen2)
         self.ax = self.canvas.figure.add_subplot(111)
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(side=tk.TOP, padx=80, pady=0)
         self.router_plot = None
-        self.image.update_visualization_for_photo(self.routers, self.clients, 5, self.num_photo)
 
     def update_visualization_for_rectangle(self, routers, clients, radius, height, width):
         self.routers = routers
@@ -62,13 +60,45 @@ class Visual:
         self.canvas.draw()
         time.sleep(0.4)
 
-    def update_visualization_for_photo(self, routers, clients, radius, num_photo, polygon):
+    def update_visualization_for_image(self, routers, clients, radius, original_image):
         self.routers = routers
         self.clients = clients
         self.radius = radius
-        self.height = height
-        self.width = width
-        pass
+        self.original_image = original_image
+
+        self.canvas_widget = self.canvas.get_tk_widget()
+        self.ax.clear()
+
+        self.ax.imshow(self.original_image, extent=[0, 1800, 0, 1800], aspect='auto')
+
+        x_coords = [router[0] for router in self.routers]
+        y_coords = [router[1] for router in self.routers]
+        self.ax.scatter(x_coords, y_coords, marker='o', color='blue', label='Routers')
+
+        client_x_coords = [client.x for client in self.clients if client.in_range]
+        client_y_coords = [client.y for client in self.clients if client.in_range]
+        self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='green', label='Clients covered')
+
+        client_x_coords = [client.x for client in self.clients if not client.in_range]
+        client_y_coords = [client.y for client in self.clients if not client.in_range]
+        self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='black', label='Clients not covered')
+
+        for x, y in zip(x_coords, y_coords):
+            circle = Circle((x, y), self.radius, fill=False, color='red', linestyle='dotted', alpha=0.5, linewidth=2)
+            self.ax.add_patch(circle)
+
+        self.ax.set_xlim(0, 1800)
+        self.ax.set_ylim(0, 1800)
+        self.fig.subplots_adjust(right=0.9, top=0.9)
+        self.ax.legend(['Routers', 'Clients covered', 'Clients not covered'], loc='upper right', bbox_to_anchor=(1.1
+                                                                                                                 , 1.1))
+        self.ax.grid(True)
+
+        self.canvas_widget.update()
+        self.canvas.draw()
+        time.sleep(0.4)
+
+    # update_visualization_for_photo(self.routers, self.clients, 5, self.num_photo)
 
     def mark_covered_clients(self, routers, clients, radius):
         self.routers = routers
@@ -80,4 +110,3 @@ class Visual:
             for router in self.routers:
                 if algorithmClass.Algorithm.isItCovered(self, router, client, radius):
                     client.in_range = True
-

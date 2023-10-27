@@ -8,7 +8,8 @@ import numpy as np
 
 
 class Algorithm:
-    def __init__(self, space, routers, clients, height, width, second_screen, num_photo, shape_polygon, check_image):
+    def __init__(self, space, routers, clients, second_screen, check_image, height=None, width=None, imageManager=None):
+        self.image_manager = None
         self.visual = None
         self.space = space
         self.routers = routers
@@ -16,18 +17,18 @@ class Algorithm:
         self.height = height
         self.width = width
         self.second_screen = second_screen
-        self.num_photo = num_photo
-        self.shape_polygon = shape_polygon
         self.check_image = check_image
         self.thread = None
+        self.imageManager = imageManager
         self.pause_event = threading.Event()
 
-    def ga_algorithm(self, tk_screen2, max_iterations, shape_polygon):
+    def ga_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
             for iteration in range(max_iterations):
-                if iteration == 1 and self.check_image:
-                    self.current_population = self.initialize_population_for_photo(20, int(self.routers), shape_polygon)
-                elif iteration == 1 and not self.check_image:
+                if iteration == 0 and self.check_image:
+                    self.current_population = self.initialize_population_for_image(20, int(self.routers), self.imageManager.shape_polygon)
+
+                elif iteration == 0 and not self.check_image:
                     self.current_population = self.initialize_population(20, int(self.routers), self.space.height,
                                                                          self.space.width)
                 # Evaluate the fitness of each solution in the population
@@ -37,9 +38,15 @@ class Algorithm:
                 # Create a new population using crossover
                 new_population = self.router_placement_crossover(descendants)
                 # Apply mutation to some solutions in the new population
-                mutated_population = self.mutate_population(new_population, 0.2, self.height, self.width)
-                resolved_routers = self.resolve_router_overlap_population(mutated_population, 5, self.height,
-                                                                          self.width)
+                if self.check_image:
+                    mutated_population = self.mutate_population(new_population, 0.2, None, None,
+                                                                self.imageManager.shape_polygon)
+                    resolved_routers = self.resolve_router_overlap_population(mutated_population, 5, None, None,
+                                                                              self.imageManager.shape_polygon)
+                else:
+                    mutated_population = self.mutate_population(new_population, 0.2, self.height, self.width, None)
+                    resolved_routers = self.resolve_router_overlap_population(mutated_population, 5, self.height,
+                                                                              self.width, None)
                 # Evaluate the fitness of the mutated population
                 mutated_fitness_scores = self.fitness_function(resolved_routers, self.clients, 5)
                 # Replace the current population with the mutated population if it's better
@@ -55,11 +62,11 @@ class Algorithm:
                 self.second_screen.coverage_percentage.set("Coverage:            " + str(coverage_percentage) + "%")
                 self.visual.mark_covered_clients(self.routers, self.clients, 5)
                 if self.check_image:
-                    self.visual.update_visualization_for_photo(self.routers, self.clients, 5, self.num_photo)
+                    self.visual.update_visualization_for_image(self.routers, self.clients, 5,
+                                                               self.imageManager.original_image)
                 elif not self.check_image:
                     self.visual.update_visualization_for_rectangle(self.routers, self.clients, 5, self.height,
                                                                    self.width)
-
                 while self.pause_event.is_set():
                     time.sleep(0.1)
 
@@ -90,7 +97,7 @@ class Algorithm:
             population.append(solution)
         return population
 
-    def initialize_population_for_photo(self, num_solutions, routers, shape_polygon):
+    def initialize_population_for_image(self, num_solutions, routers, shape_polygon):
         population = []
         for _ in range(num_solutions):
             solution = []
@@ -152,13 +159,19 @@ class Algorithm:
                     cur_list = []
         return new_population
 
-    def mutate_solution(self, solution, mutation_rate, height, width):
+    def mutate_solution(self, solution, mutation_rate, height, width, shape_polygon):
         mutated_solution = []
         for router_x, router_y in solution:
+            is_inside = -1
             if random.random() < mutation_rate:
-                # Generate new random positions for the router
-                new_y = random.uniform(0, int(height))
-                new_x = random.uniform(0, int(width))
+                if not self.check_image:
+                    new_y = random.uniform(0, int(height))
+                    new_x = random.uniform(0, int(width))
+                while self.check_image and is_inside == -1:
+                    new_y = random.uniform(0, 1800)
+                    new_x = random.uniform(0, 1800)
+                    point = (new_x, new_y)
+                    is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
             else:
                 new_x = router_x
                 new_y = router_y
@@ -166,34 +179,40 @@ class Algorithm:
             mutated_solution.append((int(new_x), int(new_y)))
         return mutated_solution
 
-    def mutate_population(self, population, mutation_rate, height, width):
+    def mutate_population(self, population, mutation_rate, height1=None, width1=None, shape_polygon1=None):
+        height = height1
+        width = width1
+        shape_polygon = shape_polygon1
         mutated_population = []
         for solution in population:
-            mutated_solution = self.mutate_solution(solution, mutation_rate, height, width)
+            mutated_solution = self.mutate_solution(solution, mutation_rate, height, width, shape_polygon)
             mutated_population.append(mutated_solution)
         return mutated_population
 
-    def resolve_router_overlap_solution(self, routers, radius, height, width):
+    def resolve_router_overlap_solution(self, routers, radius, height, width, shape_polygon):
         resolved_routers = []
         resolved_routers.append(routers[0])
         new_router = ()
         for router in routers[1:]:
             overlapping = False
             if self.checkOverlapForOneRouter(router, resolved_routers, radius):
-                new_router = self.findNewCoordinates(router, radius, height, width)
+                new_router = self.findNewCoordinates(height, width, shape_polygon)
                 overlapping = True
             if overlapping:
                 while self.checkOverlapForOneRouter(new_router, resolved_routers, radius):
-                    new_router = self.findNewCoordinates(new_router, radius, height, width)
+                    new_router = self.findNewCoordinates(height, width, shape_polygon)
                 resolved_routers.append(new_router)
             else:
                 resolved_routers.append(router)
         return resolved_routers
 
-    def resolve_router_overlap_population(self, population, radius, height, width):
+    def resolve_router_overlap_population(self, population, radius, height1=None, width1=None, shape_polygon1=None):
+        height = height1
+        width = width1
+        shape_polygon = shape_polygon1
         routers_population = []
         for routers in population:
-            routers_without_overlap = self.resolve_router_overlap_solution(routers, radius, height, width)
+            routers_without_overlap = self.resolve_router_overlap_solution(routers, radius, height, width, shape_polygon)
             routers_population.append(routers_without_overlap)
         return routers_population
 
@@ -242,9 +261,16 @@ class Algorithm:
                 return True
         return False
 
-    def findNewCoordinates(self, router, radius, height, width):
-        new_x = random.uniform(0, int(width))
-        new_y = random.uniform(0, int(height))
+    def findNewCoordinates(self, height, width, shape_polygon):
+        is_inside = -1.0
+        if not self.check_image:
+            new_x = random.uniform(0, int(width))
+            new_y = random.uniform(0, int(height))
+        while self.check_image and is_inside == -1.0:
+            y = random.uniform(0, 1800)
+            x = random.uniform(0, 1800)
+            point = (x, y)
+            is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
         new_router = (new_x, new_y)
         return new_router
 

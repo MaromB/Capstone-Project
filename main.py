@@ -85,7 +85,8 @@ class FirstScreen(tk.Frame):
         width = self.entry_SizeL.get()
         algotype = self.algorithm_combobox.get()
         num_photo = self.photo_combobox.get()
-        self.show_second_screen(routers, clients, height, width, algotype, num_photo, self.check_image)
+        check_image = self.check_image.get()
+        self.show_second_screen(routers, clients, height, width, algotype, num_photo, check_image)
 
 
 class SecondScreen(tk.Frame):
@@ -101,15 +102,19 @@ class SecondScreen(tk.Frame):
         self.second_screen = None
         self.iteration_number = tk.StringVar(value="Iteration number:         ")
         self.coverage_percentage = tk.StringVar(value="Coverage:            0%")
-        self.space = Area(int(self.height), int(self.width))
-        self.imageManager = ImageManager()
-        self.shape_polygon = self.imageManager.find_structure_shape(self.num_photo)
         if check_image:
-            self.space.generate_random_clients_for_photo(int(self.clients), self.shape_polygon)
+            self.imageManager = ImageManager()
+            self.imageManager.load_image(self.num_photo)
+            self.imageManager.find_structure_shape()
+            self.space = Area()
+            self.space.generate_random_clients_for_photo(int(self.clients), self.imageManager.shape_polygon)
+            self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self, self.check_image,
+                                       None, None, self.imageManager)
         else:
+            self.space = Area(int(self.height), int(self.width))
             self.space.generate_random_clients(int(self.clients))
-        self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self.height, self.width,
-                                   self, self.num_photo, self.shape_polygon, self.check_image)
+            self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self, self.check_image,
+                                       self.height, self.width, None)
         self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.is_paused = False
@@ -128,7 +133,7 @@ class SecondScreen(tk.Frame):
         y = (screen_height - 600) // 2
 
         # Set window size and position
-        self.tk_screen2.geometry(f'1000x700+{x + 100}+{y - 50}')
+        self.tk_screen2.geometry(f'1200x800+{x -100}+{y-120}')
         lable_font = ("Ariel", 20, "bold")
         custom_font = ("Ariel", 14)
 
@@ -152,7 +157,7 @@ class SecondScreen(tk.Frame):
                                        font=custom_font, background="light sky blue")
         self.stop_button = ttk.Button(info_frame3, text="Stop", command=self.stop_button, style="Custom.TButton")
         self.pause_continue_button = ttk.Button(info_frame3, text="Pause", command=self.toggle_pause_continue,
-                                       style="Custom.TButton")
+                                                style="Custom.TButton")
 
         self.top_label.grid(row=0, column=0, padx=0, pady=5)
         self.running_algorithm.grid(row=1, column=0, padx=0, pady=0, sticky=tk.W)
@@ -162,9 +167,7 @@ class SecondScreen(tk.Frame):
         self.details_label.grid(row=1, column=1, padx=0, pady=20)
         self.stop_button.grid(row=2, column=1, padx=(200, 0), pady=0)
         self.pause_continue_button.grid(row=2, column=1, padx=(0, 200), pady=0)
-        self.imageManager.load_images()
         self.algorithm.run_algorithm(self.tk_screen2, algotype)
-
 
     def toggle_pause_continue(self):
         if self.is_paused:
@@ -180,6 +183,7 @@ class SecondScreen(tk.Frame):
         self.tk_screen2.destroy()
         root = tk.Tk()
         OptimizationApp(root)
+
 
 class OptimizationApp:
     def __init__(self, root):

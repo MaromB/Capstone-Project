@@ -6,7 +6,7 @@ from routerClass import Router
 from clientClass import Client
 
 class Area:
-    def __init__(self, width, height):
+    def __init__(self, width=None, height=None):
         self.width = width  # Width of the space
         self.height = height  # Height of the space
         self.routers = []  # A list to store the generated routers.
