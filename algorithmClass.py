@@ -69,6 +69,8 @@ class Algorithm:
                                                                    self.width)
                 while self.pause_event.is_set():
                     time.sleep(0.1)
+            while True:
+                time.sleep(1000)
 
             print("done")
             return self.current_population
@@ -267,9 +269,9 @@ class Algorithm:
             new_x = random.uniform(0, int(width))
             new_y = random.uniform(0, int(height))
         while self.check_image and is_inside == -1.0:
-            y = random.uniform(0, 1800)
-            x = random.uniform(0, 1800)
-            point = (x, y)
+            new_y = random.uniform(0, 1800)
+            new_x = random.uniform(0, 1800)
+            point = (new_x, new_y)
             is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
         new_router = (new_x, new_y)
         return new_router

@@ -45,6 +45,7 @@ class ImageManager:
 
         simplified_shape_boundary = self.simplify_points(self.shape_boundary, distance_threshold)
 
+        #simplified_shape_boundary *= 1.5
         self.shape_polygon = cv2.approxPolyDP(np.array(simplified_shape_boundary), epsilon=3, closed=True)
         return self.shape_polygon
 
@@ -52,7 +53,7 @@ class ImageManager:
     def simplify_points(self, point_list, distance_threshold):
         simplified_list = []
         if len(point_list) > 0:
-            simplified_list.append(point_list[0])  # Always keep the first point
+            simplified_list.append(point_list[0])
         for i in range(1, len(point_list)):
             x1, y1 = point_list[i]
             x2, y2 = simplified_list[-1]

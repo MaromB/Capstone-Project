@@ -133,7 +133,7 @@ class SecondScreen(tk.Frame):
         y = (screen_height - 600) // 2
 
         # Set window size and position
-        self.tk_screen2.geometry(f'1200x800+{x -100}+{y-120}')
+        self.tk_screen2.geometry(f'1200x800+{x - 100}+{y - 120}')
         lable_font = ("Ariel", 20, "bold")
         custom_font = ("Ariel", 14)
 
@@ -152,9 +152,14 @@ class SecondScreen(tk.Frame):
                                          background="light sky blue")
         self.coverage_label = ttk.Label(info_frame2, textvariable=self.coverage_percentage, font=custom_font,
                                         background="light sky blue")
-        self.details_label = ttk.Label(info_frame3,
-                                       text=f"For  {routers}  routers, {clients}  clients and  {height}  X  {width}  area size",
-                                       font=custom_font, background="light sky blue")
+        if self.check_image:
+            self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and"
+                                                             f" image number {self.num_photo}", font=custom_font,
+                                                             background="light sky blue")
+        else:
+            self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and"
+                                                             f" {height}X{width} area size", font=custom_font,
+                                           background="light sky blue")
         self.stop_button = ttk.Button(info_frame3, text="Stop", command=self.stop_button, style="Custom.TButton")
         self.pause_continue_button = ttk.Button(info_frame3, text="Pause", command=self.toggle_pause_continue,
                                                 style="Custom.TButton")

@@ -69,18 +69,23 @@ class Visual:
         self.canvas_widget = self.canvas.get_tk_widget()
         self.ax.clear()
 
-        self.ax.imshow(self.original_image, extent=[0, 1800, 0, 1800], aspect='auto')
+        self.ax.imshow(self.original_image, extent=[0, 1800 , 1800, 0], aspect='auto')
 
-        x_coords = [router[0] for router in self.routers]
-        y_coords = [router[1] for router in self.routers]
+        x_scale = self.canvas_widget.winfo_width() * 2.7 / self.original_image.shape[1]
+        y_scale = self.canvas_widget.winfo_height() * 4.5 / self.original_image.shape[0]
+
+        _, _ = self.original_image.shape[1], self.original_image.shape[0]
+
+        x_coords = [router[0] * x_scale for router in self.routers]
+        y_coords = [router[1] * y_scale for router in self.routers]
         self.ax.scatter(x_coords, y_coords, marker='o', color='blue', label='Routers')
 
-        client_x_coords = [client.x for client in self.clients if client.in_range]
-        client_y_coords = [client.y for client in self.clients if client.in_range]
+        client_x_coords = [client.x * x_scale for client in self.clients if client.in_range]
+        client_y_coords = [client.y * y_scale for client in self.clients if client.in_range]
         self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='green', label='Clients covered')
 
-        client_x_coords = [client.x for client in self.clients if not client.in_range]
-        client_y_coords = [client.y for client in self.clients if not client.in_range]
+        client_x_coords = [client.x * x_scale for client in self.clients if not client.in_range]
+        client_y_coords = [client.y * y_scale for client in self.clients if not client.in_range]
         self.ax.scatter(client_x_coords, client_y_coords, marker='x', color='black', label='Clients not covered')
 
         for x, y in zip(x_coords, y_coords):
@@ -88,7 +93,7 @@ class Visual:
             self.ax.add_patch(circle)
 
         self.ax.set_xlim(0, 1800)
-        self.ax.set_ylim(0, 1800)
+        self.ax.set_ylim(1800, 0)
         self.fig.subplots_adjust(right=0.9, top=0.9)
         self.ax.legend(['Routers', 'Clients covered', 'Clients not covered'], loc='upper right', bbox_to_anchor=(1.1
                                                                                                                  , 1.1))
@@ -96,7 +101,8 @@ class Visual:
 
         self.canvas_widget.update()
         self.canvas.draw()
-        time.sleep(0.4)
+        if len(routers + clients) < 500:
+            time.sleep(0.4)
 
     # update_visualization_for_photo(self.routers, self.clients, 5, self.num_photo)
 
