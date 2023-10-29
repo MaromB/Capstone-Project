@@ -8,10 +8,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class FirstScreen(tk.Frame):
-    def __init__(self, parent, show_second_screen):
-        super().__init__(parent)
+    def __init__(self, root, show_second_screen):
+        super().__init__(root)
         self.show_second_screen = show_second_screen
-
+        self.root = root
         screen_height = self.master.winfo_screenheight()
         screen_width = self.master.winfo_screenwidth()
 
@@ -90,8 +90,10 @@ class FirstScreen(tk.Frame):
 
 
 class SecondScreen(tk.Frame):
-    def __init__(self, parent, routers, clients, height, width, algotype, num_photo, check_image):
-        super().__init__(parent)
+    def __init__(self, root, routers, clients, height, width, algotype, num_photo, check_image, show_second_screen):
+        super().__init__(root)
+        self.show_second_screen = show_second_screen
+        self.root = root
         self.routers = routers
         self.clients = clients
         self.height = height
@@ -186,8 +188,8 @@ class SecondScreen(tk.Frame):
 
     def stop_button(self):
         self.tk_screen2.destroy()
-        root = tk.Tk()
-        OptimizationApp(root)
+        self.root.deiconify()
+        self.root.mainloop()
 
 
 class OptimizationApp:
@@ -195,19 +197,24 @@ class OptimizationApp:
         self.second_screen = None
         self.root = root
         self.root.title("WMNs Optimization")
-
         self.routers = None
         self.clients = None
-
-        # Create an instance of the FirstScreen class and show it
         self.first_screen = FirstScreen(self.root, self.show_second_screen)
         self.first_screen.pack()
 
     def show_second_screen(self, routers, clients, height, width, algotype, num_photo, check_image):
-        self.second_screen = SecondScreen(self.root, routers, clients, height, width, algotype, num_photo, check_image)
+        self.first_screen.entry_Routers.delete(0, tk.END)
+        self.first_screen.entry_Clients.delete(0, tk.END)
+        self.first_screen.entry_SizeH.delete(0, tk.END)
+        self.first_screen.entry_SizeL.delete(0, tk.END)
+        self.first_screen.algorithm_combobox.set(' ')
+        self.first_screen.photo_combobox.set(' ')
+        self.first_screen.check_image.set(False)
+
+        self.second_screen = SecondScreen(self.root, routers, clients, height, width, algotype, num_photo, check_image,
+                                          self.show_second_screen)
         self.second_screen.pack()
         self.root.withdraw()
-
 
 def main():
     root = tk.Tk()

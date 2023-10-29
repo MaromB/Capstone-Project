@@ -30,7 +30,6 @@ class Visual:
         self.height = height
         self.width = width
 
-        self.canvas_widget = self.canvas.get_tk_widget()
         self.ax.clear()
 
         x_coords = [router[0] for router in self.routers]
@@ -66,7 +65,6 @@ class Visual:
         self.radius = radius
         self.original_image = original_image
 
-        self.canvas_widget = self.canvas.get_tk_widget()
         self.ax.clear()
 
         self.ax.imshow(self.original_image, extent=[0, 1800 , 1800, 0], aspect='auto')

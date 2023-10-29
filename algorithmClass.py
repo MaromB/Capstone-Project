@@ -26,7 +26,8 @@ class Algorithm:
         def iteration_callback(iteration):
             for iteration in range(max_iterations):
                 if iteration == 0 and self.check_image:
-                    self.current_population = self.initialize_population_for_image(20, int(self.routers), self.imageManager.shape_polygon)
+                    self.current_population = self.initialize_population_for_image(20, int(self.routers),
+                                                                                   self.imageManager.shape_polygon)
 
                 elif iteration == 0 and not self.check_image:
                     self.current_population = self.initialize_population(20, int(self.routers), self.space.height,
