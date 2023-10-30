@@ -78,6 +78,10 @@ class FirstScreen(tk.Frame):
     def show_buttons(self):
         for widget in self.grid_slaves(row=8):
             widget.grid_forget()
+        for widget in self.grid_slaves(row=9):
+            widget.grid_forget()
+        for widget in self.grid_slaves(row=10):
+            widget.grid_forget()
 
         if self.check_image.get() == 1:
             choose_photo = ttk.Label(self, text="Structure:", font=self.custom_font, background="light sky blue")
@@ -85,21 +89,21 @@ class FirstScreen(tk.Frame):
             self.photo_combobox['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13')
             choose_photo.grid(row=8, column=0, padx=20, pady=10, sticky=tk.W)
             self.photo_combobox.grid(row=8, column=1, padx=20, pady=0, sticky=tk.W)
-            self.run_button.grid(row=9, columnspan=100, padx=400, pady=100)
+            self.run_button.grid(row=11, columnspan=100, padx=400, pady=100)
         if self.check_image.get() == 2:
             label_Size = ttk.Label(self, text="Size of area:", font=self.custom_font, background="light sky blue")
-            label_height = ttk.Label(self, text="height:", font=self.custom_font3, background="light sky blue")
+            label_width = ttk.Label(self, text="width:", font=self.custom_font3, background="light sky blue")
             self.entry_SizeH = ttk.Entry(self, width=7)
-            label_width = ttk.Label(self, text="width:   ", font=self.custom_font3, background="light sky blue")
-            label_SizeX = ttk.Label(self, text=" x ", font=self.custom_font, background="light sky blue")
+            label_height = ttk.Label(self, text="height:   ", font=self.custom_font3, background="light sky blue")
+            label_SizeX = ttk.Label(self, text="  x ", font=self.custom_font, background="light sky blue")
             self.entry_SizeL = ttk.Entry(self, width=7)
             label_Size.grid(row=8, column=0, padx=20, pady=0, sticky=tk.W)
-            label_height.grid(row=8, column=1, padx=(0, 0), pady=15, sticky=tk.W)
-            self.entry_SizeH.grid(row=8, column=2, padx=(0, 0), pady=0, sticky=tk.W)
-            label_SizeX.grid(row=8, column=3, padx=0, pady=0, sticky=tk.W)
-            label_width.grid(row=8, column=4, padx=0, pady=0, sticky=tk.W)
-            self.entry_SizeL.grid(row=8, column=5, padx=0, pady=0, sticky=tk.W)
-            self.run_button.grid(row=9, columnspan=100, padx=400, pady=100)
+            self.entry_SizeH.grid(row=8, column=2, padx=(0, 0), pady=10, sticky=tk.W)
+            label_height.grid(row=8, column=1, padx=0, pady=0, sticky=tk.W)
+            label_SizeX.grid(row=9, column=1, padx=0, pady=0, sticky=tk.W)
+            label_width.grid(row=10, column=1, padx=0, pady=5, sticky=tk.W)
+            self.entry_SizeL.grid(row=10, column=2, padx=0, pady=0, sticky=tk.W)
+            self.run_button.grid(row=11, columnspan=100, padx=400, pady=47)
 
     def switch_to_second_screen(self):
         routers = self.entry_Routers.get()
@@ -219,7 +223,7 @@ class SecondScreen(tk.Frame):
         self.tk_screen2.destroy()
         self.root.deiconify()
         self.first_screen.show_buttons()
-        self.first_screen.run_button.grid(row=10, columnspan=100, padx=400, pady=150, sticky=tk.W)
+        self.first_screen.run_button.grid(row=11, columnspan=100, padx=400, pady=150, sticky=tk.W)
         self.root.mainloop()
 
 
