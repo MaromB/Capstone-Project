@@ -67,10 +67,10 @@ class Visual:
 
         self.ax.clear()
 
-        self.ax.imshow(self.original_image, extent=[0, 1800 , 1800, 0], aspect='auto')
+        self.ax.imshow(self.original_image, extent=[0, 1800, 1800, 0], aspect='auto')
 
-        x_scale = self.canvas_widget.winfo_width() * 2.7 / self.original_image.shape[1]
-        y_scale = self.canvas_widget.winfo_height() * 4.5 / self.original_image.shape[0]
+        x_scale = self.canvas_widget.winfo_width() * 2.55 / self.original_image.shape[1]
+        y_scale = self.canvas_widget.winfo_height() * 3.85 / self.original_image.shape[0]
 
         _, _ = self.original_image.shape[1], self.original_image.shape[0]
 

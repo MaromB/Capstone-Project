@@ -89,6 +89,7 @@ class Algorithm:
             total_coverage.append(counter / len(client_locations) * 100)
         return total_coverage
 
+
     def initialize_population(self, num_solutions, routers, height, width):
         population = []
         for _ in range(num_solutions):
@@ -219,11 +220,13 @@ class Algorithm:
             routers_population.append(routers_without_overlap)
         return routers_population
 
+
     def is_better(self, new_fitness_scores, old_fitness_scores):
         new_total_coverage = sum(new_fitness_scores)  # Calculate the total coverage of the new population
         old_total_coverage = sum(old_fitness_scores)
 
         return new_total_coverage > old_total_coverage
+
 
     def calculate_coverage(self, router_x, router_y, client_locations, radius):
         coverage_count = 0
@@ -232,6 +235,7 @@ class Algorithm:
             if distance <= radius:
                 coverage_count += 1
         return coverage_count
+
 
     def best_configuration_output(self, current_population, fitness_scores):
         best_conf = []
@@ -254,15 +258,18 @@ class Algorithm:
         else:
             raise ValueError("Invalid algorithm type")
 
+
     def isItCovered(self, router, client, radius):
         distance = abs(math.sqrt(((router[0] - client.x) ** 2) + ((router[1] - client.y) ** 2)))
         return distance <= radius
+
 
     def checkOverlapForOneRouter(self, router1, routers, radius):
         for router2 in routers:
             if self.distanceBetweenRouters(router1, router2, radius):
                 return True
         return False
+
 
     def findNewCoordinates(self, height, width, shape_polygon):
         is_inside = -1.0
@@ -277,12 +284,15 @@ class Algorithm:
         new_router = (new_x, new_y)
         return new_router
 
+
     def distanceBetweenRouters(self, router1, router2, radius):
         distance = abs(math.sqrt(((router1[0] - router2[0]) ** 2) + ((router1[1] - router2[1]) ** 2)))
         return distance <= 2 * radius
 
+
     def continue_button(self):
         self.pause_event.clear()
+
 
     def pause_button(self):
         self.pause_event.set()

@@ -10,6 +10,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class FirstScreen(tk.Frame):
     def __init__(self, root, show_second_screen):
         super().__init__(root)
+        self.entry_SizeL = None
+        self.entry_SizeH = None
+        self.photo_combobox = None
         self.show_second_screen = show_second_screen
         self.root = root
         screen_height = self.master.winfo_screenheight()
@@ -19,81 +22,107 @@ class FirstScreen(tk.Frame):
         y = (screen_height - 600) // 2
 
         # Set window size and position
+        # self.master.geometry(f'1200x800+{x - 100}+{y - 120}')
         self.master.geometry(f'1000x700+{x + 100}+{y - 50}')
         style = ttk.Style()
 
-        custom_font = ("Ariel", 18)
-        custom_font2 = ("Ariel", 20, "bold")
-        custom_font3 = ("Ariel", 12)
-        style.configure("Custom.TButton", font=custom_font, background="light sky blue")
-        style.configure("Checkbutton", font=custom_font, background="light sky blue")
+        self.custom_font = ("Ariel", 18)
+        self.custom_font2 = ("Ariel", 20, "bold")
+        self.custom_font3 = ("Ariel", 12)
+        style.configure("Custom.TButton", font=self.custom_font, background="light sky blue")
+        style.configure("Checkbutton", font=self.custom_font, background="light sky blue")
         self.configure(bg="light sky blue")
 
         self.pack(fill=tk.BOTH, expand=True)
-        self.check_image = tk.BooleanVar()
+        self.check_image = tk.IntVar()
 
         self.label_Space = ttk.Label(self, text=" ", background="light sky blue")
-        self.label_of_project = ttk.Label(self, text="Optimization of routers placements in WMNs:", font=custom_font2,
+        self.label_of_project = ttk.Label(self, text="Optimization of routers placements in WMNs:",
+                                          font=self.custom_font2,
                                           background="light sky blue")
-        self.label_Following = ttk.Label(self, text="Please insert the following:", font=custom_font,
+        self.label_Following = ttk.Label(self, text="Please insert the following:", font=self.custom_font,
                                          background="light sky blue")
-        self.label_Routers = ttk.Label(self, text="Number of mesh routers:", font=custom_font,
+        self.label_Routers = ttk.Label(self, text="Number of mesh routers:", font=self.custom_font,
                                        background="light sky blue")
         self.entry_Routers = ttk.Entry(self, width=7)
-        self.label_Clients = ttk.Label(self, text="Numer of clients:", font=custom_font, background="light sky blue")
+        self.label_Clients = ttk.Label(self, text="Numer of clients:", font=self.custom_font,
+                                       background="light sky blue")
         self.entry_Clients = ttk.Entry(self, width=7)
-        self.label_Size = ttk.Label(self, text="Size of area:", font=custom_font, background="light sky blue")
-        self.label_height = ttk.Label(self, text="height:", font=custom_font3, background="light sky blue")
-        self.entry_SizeH = ttk.Entry(self, width=7)
-        self.label_width = ttk.Label(self, text="width:   ", font=custom_font3, background="light sky blue")
-        self.label_SizeX = ttk.Label(self, text=" x ", font=custom_font, background="light sky blue")
-        self.entry_SizeL = ttk.Entry(self, width=7)
-        self.label_algorithem = ttk.Label(self, text="Algorithem:", font=custom_font, background="light sky blue")
+        self.label_algorithem = ttk.Label(self, text="Algorithem:", font=self.custom_font, background="light sky blue")
         self.algorithm_combobox = ttk.Combobox(self, width=7)
-        self.algorithm_combobox['values'] = ('', 'GA', 'PSO')
-        self.choose_photo = ttk.Label(self, text="Choosing a structure:", font=custom_font, background="light sky blue")
-        self.photo_combobox = ttk.Combobox(self, width=7)
-        self.photo_combobox['values'] = ('', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13')
+        self.algorithm_combobox['values'] = ('GA', 'PSO')
+        self.label_method = ttk.Label(self, text="Calculation method:", font=self.custom_font,
+                                      background="light sky blue")
         self.run_button = ttk.Button(self, text="Run", command=self.switch_to_second_screen, style="Custom.TButton")
-        self.Checkbutton = tk.Checkbutton(self, text="Image?", variable=self.check_image, onvalue=True, offvalue=False,
-                                          background="light sky blue", font=custom_font3)
+        self.option_Rect = tk.Radiobutton(self, text="Rectangle", variable=self.check_image, value=2,
+                                          command=self.show_buttons, background="light sky blue",
+                                          font=self.custom_font3)
+        self.option_Image = tk.Radiobutton(self, text="Image", variable=self.check_image, value=1,
+                                           command=self.show_buttons, background="light sky blue",
+                                           font=self.custom_font3)
 
         self.label_Space.grid(row=1, column=0, padx=0, pady=40, sticky=tk.W)
         self.label_of_project.grid(row=2, column=0, padx=18, pady=30, sticky=tk.W)
         self.label_Following.grid(row=3, column=0, padx=20, pady=30, sticky=tk.W)
         self.label_Routers.grid(row=4, column=0, padx=20, pady=0, sticky=tk.W)
-        self.entry_Routers.grid(row=4, column=1, padx=0, pady=10, sticky=tk.W)
-        self.label_Clients.grid(row=5, column=0, padx=20, pady=20, sticky=tk.W)
-        self.entry_Clients.grid(row=5, column=1, padx=0, pady=10, sticky=tk.W)
-        self.label_Size.grid(row=6, column=0, padx=20, pady=0, sticky=tk.W)
-        self.label_height.grid(row=6, column=1, padx=(0, 0), pady=0, sticky=tk.W)
-        self.entry_SizeH.grid(row=6, column=2, padx=(0, 0), pady=0, sticky=tk.W)
-        self.label_SizeX.grid(row=6, column=3, padx=0, pady=0, sticky=tk.W)
-        self.label_width.grid(row=6, column=4, padx=0, pady=0, sticky=tk.W)
-        self.entry_SizeL.grid(row=6, column=5, padx=0, pady=0, sticky=tk.W)
-        self.label_algorithem.grid(row=7, column=0, padx=20, pady=15, sticky=tk.W)
-        self.algorithm_combobox.grid(row=7, column=1, padx=0, pady=0)
-        self.choose_photo.grid(row=8, column=0, padx=20, pady=0, sticky=tk.W)
-        self.photo_combobox.grid(row=8, column=1, padx=20, pady=15, sticky=tk.W)
-        self.Checkbutton.grid(row=8, column=2, padx=0, pady=0, sticky=tk.W)
-        self.run_button.grid(row=9, columnspan=100, padx=400, pady=100)
+        self.entry_Routers.grid(row=4, column=1, padx=0, pady=15, sticky=tk.W)
+        self.label_Clients.grid(row=5, column=0, padx=20, pady=0, sticky=tk.W)
+        self.entry_Clients.grid(row=5, column=1, padx=0, pady=0, sticky=tk.W)
+        self.label_algorithem.grid(row=6, column=0, padx=20, pady=10, sticky=tk.W)
+        self.algorithm_combobox.grid(row=6, column=1, padx=0, pady=0)
+        self.label_method.grid(row=7, column=0, padx=20, pady=0, sticky=tk.W)
+        self.option_Rect.grid(row=7, column=1, padx=0, pady=0, sticky=tk.W)
+        self.option_Image.grid(row=7, column=2, padx=0, pady=0, sticky=tk.W)
+        self.run_button.grid(row=10, columnspan=100, padx=400, pady=150, sticky=tk.W)
+
+    def show_buttons(self):
+        for widget in self.grid_slaves(row=8):
+            widget.grid_forget()
+
+        if self.check_image.get() == 1:
+            choose_photo = ttk.Label(self, text="Structure:", font=self.custom_font, background="light sky blue")
+            self.photo_combobox = ttk.Combobox(self, width=7)
+            self.photo_combobox['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13')
+            choose_photo.grid(row=8, column=0, padx=20, pady=10, sticky=tk.W)
+            self.photo_combobox.grid(row=8, column=1, padx=20, pady=0, sticky=tk.W)
+            self.run_button.grid(row=9, columnspan=100, padx=400, pady=100)
+        if self.check_image.get() == 2:
+            label_Size = ttk.Label(self, text="Size of area:", font=self.custom_font, background="light sky blue")
+            label_height = ttk.Label(self, text="height:", font=self.custom_font3, background="light sky blue")
+            self.entry_SizeH = ttk.Entry(self, width=7)
+            label_width = ttk.Label(self, text="width:   ", font=self.custom_font3, background="light sky blue")
+            label_SizeX = ttk.Label(self, text=" x ", font=self.custom_font, background="light sky blue")
+            self.entry_SizeL = ttk.Entry(self, width=7)
+            label_Size.grid(row=8, column=0, padx=20, pady=0, sticky=tk.W)
+            label_height.grid(row=8, column=1, padx=(0, 0), pady=15, sticky=tk.W)
+            self.entry_SizeH.grid(row=8, column=2, padx=(0, 0), pady=0, sticky=tk.W)
+            label_SizeX.grid(row=8, column=3, padx=0, pady=0, sticky=tk.W)
+            label_width.grid(row=8, column=4, padx=0, pady=0, sticky=tk.W)
+            self.entry_SizeL.grid(row=8, column=5, padx=0, pady=0, sticky=tk.W)
+            self.run_button.grid(row=9, columnspan=100, padx=400, pady=100)
 
     def switch_to_second_screen(self):
         routers = self.entry_Routers.get()
         clients = self.entry_Clients.get()
-        height = self.entry_SizeH.get()
-        width = self.entry_SizeL.get()
         algotype = self.algorithm_combobox.get()
-        num_photo = self.photo_combobox.get()
         check_image = self.check_image.get()
-        self.show_second_screen(routers, clients, height, width, algotype, num_photo, check_image)
+
+        if check_image == 2:
+            height = self.entry_SizeH.get()
+            width = self.entry_SizeL.get()
+            self.show_second_screen(routers, clients, height, width, algotype, None, 0)
+        else:
+            num_photo = self.photo_combobox.get()
+            self.show_second_screen(routers, clients, None, None, algotype, num_photo, 1)
 
 
 class SecondScreen(tk.Frame):
-    def __init__(self, root, routers, clients, height, width, algotype, num_photo, check_image, show_second_screen):
+    def __init__(self, root, first_screen, routers, clients, height, width, algotype, num_photo, check_image
+                 , show_second_screen):
         super().__init__(root)
         self.show_second_screen = show_second_screen
         self.root = root
+        self.first_screen = first_screen
         self.routers = routers
         self.clients = clients
         self.height = height
@@ -157,7 +186,7 @@ class SecondScreen(tk.Frame):
         if self.check_image:
             self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and"
                                                              f" image number {self.num_photo}", font=custom_font,
-                                                             background="light sky blue")
+                                           background="light sky blue")
         else:
             self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and"
                                                              f" {height}X{width} area size", font=custom_font,
@@ -189,6 +218,8 @@ class SecondScreen(tk.Frame):
     def stop_button(self):
         self.tk_screen2.destroy()
         self.root.deiconify()
+        self.first_screen.show_buttons()
+        self.first_screen.run_button.grid(row=10, columnspan=100, padx=400, pady=150, sticky=tk.W)
         self.root.mainloop()
 
 
@@ -203,18 +234,29 @@ class OptimizationApp:
         self.first_screen.pack()
 
     def show_second_screen(self, routers, clients, height, width, algotype, num_photo, check_image):
+        if not check_image:
+            self.first_screen.entry_SizeH.delete(0, tk.END)
+            self.first_screen.entry_SizeL.delete(0, tk.END)
+        else:
+            self.first_screen.photo_combobox.set(' ')
         self.first_screen.entry_Routers.delete(0, tk.END)
         self.first_screen.entry_Clients.delete(0, tk.END)
-        self.first_screen.entry_SizeH.delete(0, tk.END)
-        self.first_screen.entry_SizeL.delete(0, tk.END)
         self.first_screen.algorithm_combobox.set(' ')
-        self.first_screen.photo_combobox.set(' ')
         self.first_screen.check_image.set(False)
+        self.first_screen.option_Rect = tk.Radiobutton(self.root, text="Rectangle",
+                                                       variable=self.first_screen.check_image, value=0,
+                                                       command=self.first_screen.show_buttons,
+                                                       background="light sky blue", font=self.first_screen.custom_font3)
+        self.first_screen.option_Image = tk.Radiobutton(self.root, text="Image", variable=self.first_screen.check_image,
+                                                        value=1, command=self.first_screen.show_buttons,
+                                                        background="light sky blue",
+                                                        font=self.first_screen.custom_font3)
 
-        self.second_screen = SecondScreen(self.root, routers, clients, height, width, algotype, num_photo, check_image,
-                                          self.show_second_screen)
+        self.second_screen = SecondScreen(self.root, self.first_screen, routers, clients, height,
+                                          width, algotype, num_photo, check_image, self.show_second_screen)
         self.second_screen.pack()
         self.root.withdraw()
+
 
 def main():
     root = tk.Tk()

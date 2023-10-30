@@ -21,6 +21,7 @@ class ImageManager:
         folder_path2 = "C:/Users/Administrator/Downloads/Capstone-Project/project photos/before"
         image_filename2 = num_of_image + ".jpg"
         image_path2 = os.path.join(folder_path2, image_filename2)
+        #self.original_image = self.frame_image
         self.original_image = cv2.imread(image_path2)
 
     def find_structure_shape(self):
