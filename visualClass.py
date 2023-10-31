@@ -112,5 +112,5 @@ class Visual:
         for client in self.clients:
             client.in_range = False
             for router in self.routers:
-                if algorithmClass.Algorithm.isItCovered(self, router, client, radius):
+                if algorithmClass.Algorithm.isItCovered(self.tk_screen2, router, client, radius):
                     client.in_range = True

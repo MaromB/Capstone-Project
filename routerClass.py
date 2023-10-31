@@ -6,4 +6,3 @@ class Router:
 
     def __str__(self):
         return f"Router at ({self.x}, {self.y}), Radius: {self.radius}"
-

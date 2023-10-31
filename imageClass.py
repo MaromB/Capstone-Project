@@ -4,6 +4,19 @@ import os
 import numpy as np
 
 
+def simplify_points(point_list, distance_threshold):
+    simplified_list = []
+    if len(point_list) > 0:
+        simplified_list.append(point_list[0])
+    for i in range(1, len(point_list)):
+        x1, y1 = point_list[i]
+        x2, y2 = simplified_list[-1]
+        distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        if distance >= distance_threshold:
+            simplified_list.append((x1, y1))
+    return simplified_list
+
+
 class ImageManager:
     def __init__(self):
         self.shape_boundary = None
@@ -21,7 +34,7 @@ class ImageManager:
         folder_path2 = "C:/Users/Administrator/Downloads/Capstone-Project/project photos/before"
         image_filename2 = num_of_image + ".jpg"
         image_path2 = os.path.join(folder_path2, image_filename2)
-        #self.original_image = self.frame_image
+        # self.original_image = self.frame_image
         self.original_image = cv2.imread(image_path2)
 
     def find_structure_shape(self):
@@ -44,21 +57,7 @@ class ImageManager:
                     self.shape_boundary.append((x, y))
                 distance_threshold = 5
 
-        simplified_shape_boundary = self.simplify_points(self.shape_boundary, distance_threshold)
+        simplified_shape_boundary = simplify_points(self.shape_boundary, distance_threshold)
 
-        #simplified_shape_boundary *= 1.5
         self.shape_polygon = cv2.approxPolyDP(np.array(simplified_shape_boundary), epsilon=3, closed=True)
         return self.shape_polygon
-
-
-    def simplify_points(self, point_list, distance_threshold):
-        simplified_list = []
-        if len(point_list) > 0:
-            simplified_list.append(point_list[0])
-        for i in range(1, len(point_list)):
-            x1, y1 = point_list[i]
-            x2, y2 = simplified_list[-1]
-            distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-            if distance >= distance_threshold:
-                simplified_list.append((x1, y1))
-        return simplified_list

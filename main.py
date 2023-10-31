@@ -17,32 +17,35 @@ class FirstScreen(tk.Frame):
         self.root = root
         screen_height = self.master.winfo_screenheight()
         screen_width = self.master.winfo_screenwidth()
+        self.check_image = tk.IntVar()
 
-        x = (screen_width - 800) // 2
-        y = (screen_height - 600) // 2
-
-        # Set window size and position
-        # self.master.geometry(f'1200x800+{x - 100}+{y - 120}')
-        self.master.geometry(f'1000x700+{x + 100}+{y - 50}')
         style = ttk.Style()
+        style.configure("Custom.TFrame", background="light sky blue")
+        info_frame1 = ttk.Frame(self.root, style="Custom.TFrame")
+        info_frame1.pack(side=tk.TOP, anchor=tk.S, padx=80, pady=0)
+        self.root.configure(bg="light sky blue")
 
-        self.custom_font = ("Ariel", 18)
-        self.custom_font2 = ("Ariel", 20, "bold")
+        self.custom_font = ("Ariel", 16)
+        self.custom_font2 = ("Ariel", 22, "bold")
         self.custom_font3 = ("Ariel", 12)
+        self.custom_font4 = ("Ariel", 16, "bold")
+
         style.configure("Custom.TButton", font=self.custom_font, background="light sky blue")
         style.configure("Checkbutton", font=self.custom_font, background="light sky blue")
         self.configure(bg="light sky blue")
 
-        self.pack(fill=tk.BOTH, expand=True)
-        self.check_image = tk.IntVar()
+        x = (screen_width - 800) // 2
+        y = (screen_height - 600) // 2
 
-        self.label_Space = ttk.Label(self, text=" ", background="light sky blue")
-        self.label_of_project = ttk.Label(self, text="Optimization of routers placements in WMNs:",
+        self.master.geometry(f'1000x700+{x + 100}+{y - 50}')
+
+        self.label_Space = ttk.Label(info_frame1, text=" ", background="light sky blue")
+        self.label_of_project = ttk.Label(info_frame1, text="Optimization of routers placements in WMNs",
                                           font=self.custom_font2,
                                           background="light sky blue")
-        self.label_Following = ttk.Label(self, text="Please insert the following:", font=self.custom_font,
+        self.label_Following = ttk.Label(self, text="Please insert the following:", font=self.custom_font4,
                                          background="light sky blue")
-        self.label_Routers = ttk.Label(self, text="Number of mesh routers:", font=self.custom_font,
+        self.label_Routers = ttk.Label(self, text="Number of routers:", font=self.custom_font,
                                        background="light sky blue")
         self.entry_Routers = ttk.Entry(self, width=7)
         self.label_Clients = ttk.Label(self, text="Numer of clients:", font=self.custom_font,
@@ -61,47 +64,44 @@ class FirstScreen(tk.Frame):
                                            command=self.show_buttons, background="light sky blue",
                                            font=self.custom_font3)
 
-        self.label_Space.grid(row=1, column=0, padx=0, pady=40, sticky=tk.W)
-        self.label_of_project.grid(row=2, column=0, padx=18, pady=30, sticky=tk.W)
-        self.label_Following.grid(row=3, column=0, padx=20, pady=30, sticky=tk.W)
+        self.label_Space.grid(row=1, column=0, padx=0, pady=30, sticky=tk.W)
+        self.label_of_project.grid(row=2, column=0, padx=18, pady=45)
+        self.label_Following.grid(row=3, column=0, padx=15, pady=30, sticky=tk.W)
         self.label_Routers.grid(row=4, column=0, padx=20, pady=0, sticky=tk.W)
-        self.entry_Routers.grid(row=4, column=1, padx=0, pady=15, sticky=tk.W)
+        self.entry_Routers.grid(row=4, column=1, padx=0, pady=15, sticky=tk.E)
         self.label_Clients.grid(row=5, column=0, padx=20, pady=0, sticky=tk.W)
-        self.entry_Clients.grid(row=5, column=1, padx=0, pady=0, sticky=tk.W)
+        self.entry_Clients.grid(row=5, column=1, padx=0, pady=0, sticky=tk.E)
         self.label_algorithem.grid(row=6, column=0, padx=20, pady=10, sticky=tk.W)
-        self.algorithm_combobox.grid(row=6, column=1, padx=0, pady=0)
+        self.algorithm_combobox.grid(row=6, column=1, padx=0, pady=0, sticky=tk.E)
         self.label_method.grid(row=7, column=0, padx=20, pady=0, sticky=tk.W)
-        self.option_Rect.grid(row=7, column=1, padx=0, pady=0, sticky=tk.W)
-        self.option_Image.grid(row=7, column=2, padx=0, pady=0, sticky=tk.W)
+        self.option_Rect.grid(row=7, column=1, padx=0, pady=0, sticky=tk.E)
+        self.option_Image.grid(row=7, column=2, padx=0, pady=0, sticky=tk.E)
         self.run_button.grid(row=10, columnspan=100, padx=400, pady=150, sticky=tk.W)
 
     def show_buttons(self):
-        for widget in self.grid_slaves(row=8):
-            widget.grid_forget()
-        for widget in self.grid_slaves(row=9):
-            widget.grid_forget()
-        for widget in self.grid_slaves(row=10):
-            widget.grid_forget()
+        for row in range(8, 11):
+            for widget in self.grid_slaves(row=row):
+                widget.grid_forget()
 
         if self.check_image.get() == 1:
             choose_photo = ttk.Label(self, text="Structure:", font=self.custom_font, background="light sky blue")
             self.photo_combobox = ttk.Combobox(self, width=7)
             self.photo_combobox['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13')
-            choose_photo.grid(row=8, column=0, padx=20, pady=10, sticky=tk.W)
-            self.photo_combobox.grid(row=8, column=1, padx=20, pady=0, sticky=tk.W)
-            self.run_button.grid(row=11, columnspan=100, padx=400, pady=100)
+            choose_photo.grid(row=8, column=0, padx=20, pady=5, sticky=tk.W)
+            self.photo_combobox.grid(row=8, column=1, padx=0, pady=0, sticky=tk.E)
+            self.run_button.grid(row=11, columnspan=100, padx=400, pady=104)
         if self.check_image.get() == 2:
             label_Size = ttk.Label(self, text="Size of area:", font=self.custom_font, background="light sky blue")
-            label_width = ttk.Label(self, text="width:", font=self.custom_font3, background="light sky blue")
+            label_width = ttk.Label(self, text="Width:         ", font=self.custom_font3, background="light sky blue")
             self.entry_SizeH = ttk.Entry(self, width=7)
-            label_height = ttk.Label(self, text="height:   ", font=self.custom_font3, background="light sky blue")
-            label_SizeX = ttk.Label(self, text="  x ", font=self.custom_font, background="light sky blue")
+            label_height = ttk.Label(self, text="Height:       ", font=self.custom_font3, background="light sky blue")
+            label_SizeX = ttk.Label(self, text="  x        ", font=self.custom_font, background="light sky blue")
             self.entry_SizeL = ttk.Entry(self, width=7)
-            label_Size.grid(row=8, column=0, padx=20, pady=0, sticky=tk.W)
+            label_Size.grid(row=8, column=0, padx=20, pady=5, sticky=tk.W)
             self.entry_SizeH.grid(row=8, column=2, padx=(0, 0), pady=10, sticky=tk.W)
-            label_height.grid(row=8, column=1, padx=0, pady=0, sticky=tk.W)
-            label_SizeX.grid(row=9, column=1, padx=0, pady=0, sticky=tk.W)
-            label_width.grid(row=10, column=1, padx=0, pady=5, sticky=tk.W)
+            label_height.grid(row=8, column=1, padx=0, pady=0, sticky=tk.E)
+            label_SizeX.grid(row=9, column=1, padx=0, pady=0, sticky=tk.E)
+            label_width.grid(row=10, column=1, padx=0, pady=7, sticky=tk.E)
             self.entry_SizeL.grid(row=10, column=2, padx=0, pady=0, sticky=tk.W)
             self.run_button.grid(row=11, columnspan=100, padx=400, pady=47)
 
@@ -121,8 +121,8 @@ class FirstScreen(tk.Frame):
 
 
 class SecondScreen(tk.Frame):
-    def __init__(self, root, first_screen, routers, clients, height, width, algotype, num_photo, check_image
-                 , show_second_screen):
+    def __init__(self, root, first_screen, routers, clients, height, width, algotype, num_photo, check_image,
+                 show_second_screen):
         super().__init__(root)
         self.show_second_screen = show_second_screen
         self.root = root
@@ -154,22 +154,20 @@ class SecondScreen(tk.Frame):
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.is_paused = False
 
-        self.tk_screen2 = tk.Toplevel()  # Create a new window (second screen)
+        self.tk_screen2 = tk.Toplevel()
         self.tk_screen2.title("WMNs Optimization - map")
         self.tk_screen2.configure(bg="light sky blue")
         style = ttk.Style()
         style.configure("Custom.TFrame", background="light sky blue")
 
-        # Get screen width and height
         screen_width = self.tk_screen2.winfo_screenwidth()
         screen_height = self.tk_screen2.winfo_screenheight()
 
         x = (screen_width - 800) // 2
         y = (screen_height - 600) // 2
 
-        # Set window size and position
         self.tk_screen2.geometry(f'1200x800+{x - 100}+{y - 120}')
-        lable_font = ("Ariel", 20, "bold")
+        lable_font = ("Ariel", 22, "bold")
         custom_font = ("Ariel", 14)
 
         info_frame1 = ttk.Frame(self.tk_screen2, style="Custom.TFrame")
