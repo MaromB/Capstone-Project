@@ -124,7 +124,7 @@ def checkOverlapForOneRouter(router1, routers, radius):
     return False
 
 
-class Algorithm:
+class GA:
     def __init__(self, space, routers, clients, second_screen, check_image, height=None, width=None, imageManager=None):
         self.image_manager = None
         self.visual = None
@@ -139,7 +139,7 @@ class Algorithm:
         self.imageManager = imageManager
         self.pause_event = threading.Event()
 
-    def ga_algorithm(self, tk_screen2, max_iterations):
+    def GA_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
             for iteration in range(max_iterations):
                 if iteration == 0 and self.check_image:
@@ -262,16 +262,6 @@ class Algorithm:
                                                                            shape_polygon)
             routers_population.append(routers_without_overlap)
         return routers_population
-
-    def run_algorithm(self, tk_screen2, algotype):
-        # if algotype == 'PSO':
-        # self.pso_algorithm()
-        # elif
-        if algotype == 'GA':
-            self.thread = threading.Thread(target=self.ga_algorithm, args=(tk_screen2, 10000))
-            self.thread.start()
-        else:
-            raise ValueError("Invalid algorithm type")
 
     def isItCovered(self, router, client, radius):
         distance = abs(math.sqrt(((router[0] - client.x) ** 2) + ((router[1] - client.y) ** 2)))

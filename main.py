@@ -1,7 +1,8 @@
+import threading
 import tkinter as tk
 from tkinter import ttk
 from areaClass import Area
-from algorithmClass import Algorithm
+from GA_Class import GA
 from imageClass import ImageManager
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -137,19 +138,19 @@ class SecondScreen(tk.Frame):
         self.second_screen = None
         self.iteration_number = tk.StringVar(value="Iteration number:         ")
         self.coverage_percentage = tk.StringVar(value="Coverage:            0%")
-        if check_image:
+        if check_image and algotype == 'GA':
             self.imageManager = ImageManager()
             self.imageManager.load_image(self.num_photo)
             self.imageManager.find_structure_shape()
             self.space = Area()
             self.space.generate_random_clients_for_photo(int(self.clients), self.imageManager.shape_polygon)
-            self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self, self.check_image,
-                                       None, None, self.imageManager)
+            self.algorithm_GA = GA(self.space, self.routers, self.space.clients, self, self.check_image,
+                                   None, None, self.imageManager)
         else:
             self.space = Area(int(self.height), int(self.width))
             self.space.generate_random_clients(int(self.clients))
-            self.algorithm = Algorithm(self.space, self.routers, self.space.clients, self, self.check_image,
-                                       self.height, self.width, None)
+            self.algorithm_GA = GA(self.space, self.routers, self.space.clients, self, self.check_image,
+                                   self.height, self.width, None)
         self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.is_paused = False
@@ -205,17 +206,25 @@ class SecondScreen(tk.Frame):
         self.details_label.grid(row=1, column=1, padx=0, pady=20)
         self.stop_button.grid(row=2, column=1, padx=(200, 0), pady=0)
         self.pause_continue_button.grid(row=2, column=1, padx=(0, 200), pady=0)
-        self.algorithm.run_algorithm(self.tk_screen2, algotype)
+
+        if algotype == 'GA':
+            self.thread = threading.Thread(target=self.algorithm_GA.GA_algorithm, args=(self.tk_screen2, 10000))
+            self.thread.start()
+        elif algotype == 'PSO':
+            self.thread = threading.Thread(target=self.algorithm_GA.GA_algorithm, args=(self.tk_screen2, 10000))
+            self.thread.start()
+        else:
+            raise ValueError("Invalid algorithm type")
 
     def toggle_pause_continue(self):
         if self.is_paused:
             self.is_paused = False
             self.pause_continue_button.config(text="Pause")
-            self.algorithm.continue_button()
+            self.algorithm_GA.continue_button()
         else:
             self.is_paused = True
             self.pause_continue_button.config(text="Continue")
-            self.algorithm.pause_button()
+            self.algorithm_GA.pause_button()
 
     def stop_button(self):
         self.tk_screen2.destroy()

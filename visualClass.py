@@ -3,7 +3,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Circle
 import tkinter as tk
-import algorithmClass
+import GA_Class
 
 
 class Visual:
@@ -112,5 +112,5 @@ class Visual:
         for client in self.clients:
             client.in_range = False
             for router in self.routers:
-                if algorithmClass.Algorithm.isItCovered(self.tk_screen2, router, client, radius):
+                if GA_Class.GA.isItCovered(self.tk_screen2, router, client, radius):
                     client.in_range = True
