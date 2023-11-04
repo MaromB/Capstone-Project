@@ -26,12 +26,11 @@ class ImageManager:
         self.contours = []
 
     def load_image(self, num_of_image):
-        folder_path1 = "C:/Users/Administrator/Downloads/Capstone-Project/project photos"
+        folder_path1 = "C:/Users/Win10/Capstone-Project/project photos/"
         image_filename1 = num_of_image + ".jpg"
         image_path1 = os.path.join(folder_path1, image_filename1)
         self.frame_image = cv2.imread(image_path1)
-
-        folder_path2 = "C:/Users/Administrator/Downloads/Capstone-Project/project photos/before"
+        folder_path2 = "C:/Users/Win10/Capstone-Project/project photos/before"
         image_filename2 = num_of_image + ".jpg"
         image_path2 = os.path.join(folder_path2, image_filename2)
         # self.original_image = self.frame_image
@@ -55,8 +54,8 @@ class ImageManager:
                 for point in largest_contour:
                     x, y = point[0]
                     self.shape_boundary.append((x, y))
-                distance_threshold = 5
 
+        distance_threshold = 5
         simplified_shape_boundary = simplify_points(self.shape_boundary, distance_threshold)
 
         self.shape_polygon = cv2.approxPolyDP(np.array(simplified_shape_boundary), epsilon=3, closed=True)
