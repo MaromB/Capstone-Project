@@ -5,7 +5,30 @@ import time
 import cv2
 from routerClass import Router
 from visualClass import Visual
-import numpy as np
+
+
+def calculate_direction(router, inertia_weight, cognitive_component, height, width):
+    new_x_direction = inertia_weight * router.vector[0] + cognitive_component * router.speed
+    new_y_direction = inertia_weight * router.vector[1] + cognitive_component * router.speed
+    new_x = router.x + new_x_direction
+    new_y = router.y + new_y_direction
+    new_x = min(max(0, new_x), width)
+    new_y = min(max(0, new_y), height)
+    router.vector = (new_x_direction, new_y_direction)
+    router.x = new_x
+    router.y = new_y
+
+
+class my_global:
+    def __init__(self):
+        self.coverage = 0
+        self.solution = []
+
+
+class particle_list:
+    def __init__(self):
+        self.coverage = 0
+        self.solution = []
 
 
 class PSO:
@@ -25,14 +48,8 @@ class PSO:
         self.num_particles = 20
         self.image_manager = image_manager
         self.pause_event = threading.Event()
-        self.global_best = []
-        self.global_best = []
-        self.global_best.solution = []
-        self.global_best.coverage = 0
-        self.best = []
-        for i in range(self.num_particles):
-            self.best[i].coverage = 0
-            self.best[i].solutions = []
+        self.global_best = my_global()
+        self.best = [particle_list() for _ in range(self.num_particles)]
 
     def PSO_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
@@ -42,95 +59,93 @@ class PSO:
             inertia_weight = 0.7
 
             if self.check_image:
-                self.swarm = self.initialize_swarm_for_image(self.num_particles, int(self.routers), 5,
-                                                             self.image_manager.shape_polygon)
+                self.initialize_swarm_for_image(self.num_particles, int(self.routers), 5,
+                                                self.image_manager.shape_polygon)
+                self.visual = Visual(tk_screen2)
             else:
-                self.swarm = self.initialize_swarm_for_rect(self.num_particles, int(self.routers), self.height,
-                                                            self.width)
+                self.initialize_swarm_for_rect(self.num_particles, int(self.routers), 5, self.height, self.width)
+                self.visual = Visual(tk_screen2)
 
-            # Initialize particle velocities only once at the beginning
-            for particle in self.swarm:
-                velocity_values = self.initialize_particle_velocity(len(self.particles), max_velocity)
-                particle.velocity = velocity_values
+            self.initialize_velocities(max_velocity)
 
             for iteration in range(max_iterations):
-                self.update_particles(inertia_weight, cognitive_weight, social_weight, max_velocity)
-                # 5. Evaluate Fitness
-                self.evaluate_fitness()  # Implement this function
+                self.update_swarm(inertia_weight, cognitive_weight, social_weight, max_velocity)
 
-                # 6. Update Global Best
-                for particle in self.swarm:
-                    if particle.coverage < self.global_best.coverage:
-                        self.global_best.solution = self.particles.solution
-                        self.global_best.coverage = self.particles.coverage
-
-                # 7. Visualize Best Solution
-                self.visualize_solution(self.global_best.solution)  # Implement this function
-
-                # 8. Termination Condition (Optional)
-                if self.termination_condition(iteration):
-                    break
+                self.evaluate_fitness(5)
 
                 time.sleep(0.4)
+                self.update_best_particle()
+                self.update_best_global_particle()
+                self.visualize_solution()
+                while self.pause_event.is_set():
+                    time.sleep(0.1)
 
-                # 9. Visualize Final Result
-                self.visualize_solution(self.global_best.solution)  # Implement this function
-
-                # 10. Output Metrics (Optional)
-                self.output_metrics(self.global_best.solution)  # Implement this function
+                self.output_metrics()  # Implement this function
 
         iteration_callback(1)
 
-    def update_particles(self, inertia_weight, cognitive_weight, social_weight, max_velocity):
-        for particle, i in self.swarm:
-            self.global_best.solution = self.find_global_best_solution()  # need to implement this function
+    def visualize_solution(self):
+        self.visual.mark_covered_clients(self.global_best, self.clients, 5, 'PSO')
+        self.visual.update_visualization_for_rectangle(self.global_best, self.clients, 5, self.height, self.width)
 
-            cognitive_component = [cognitive_weight * (self.best[i].coverage - particle.coverage)
-                                   for _ in range(len(particle))]  # quality of solution==coverage
+    def evaluate_fitness(self, radius):
+        for particle in self.swarm:
+            for router in particle.solution:
+                counter = 0
+                for client in self.clients:
+                    if self.visual.check_coverage(router, client, radius, 'PSO'):
+                        counter += 1
+                router.amount_of_coverage = counter
+            particle.solution.sort(key=lambda r: router.amount_of_coverage, reverse=True)
 
-            social_component = [social_weight * (self.global_best.coverage - particle.coverage)
-                                for _ in range(len(particle))]
+        for particle in self.swarm:
+            total_coverage = sum(router.amount_of_coverage for router in particle.solution)
+            particle.coverage = (total_coverage / (len(self.clients) * len(particle.solution)) * 100)
 
-            particle.velocity = inertia_weight * particle.velocity + cognitive_component + social_component
+    def update_swarm(self, inertia_weight, cognitive_weight, social_weight, max_velocity):
+        for i, particle in enumerate(self.swarm):
 
-            if particle.velocity > max_velocity:
-                particle.velocity = max_velocity
-            elif particle.velocity < -max_velocity:
-                particle.velocity = -max_velocity
+            cognitive_component = [cognitive_weight * (self.best[i].coverage - self.particles[i].coverage)
+                                   for _ in range(self.num_particles)]  # quality of solution==coverage
 
-            particle.solution = self.update_router_locations(particle.solution, particle.velocity)
-            # need to implement this function
+            social_component = [social_weight * (self.global_best.coverage - self.particles[i].coverage)
+                                for _ in range(self.num_particles)]
 
-    def initialize_particle_velocity(self, routers, max_velocity):
-        velocity_of_routers = [random.uniform(-max_velocity, max_velocity) for _ in range(routers)]
-        return velocity_of_routers
+            for router in particle.solution:
+                self.evaluate_fitness(5)
+                speed_boost_factor = 1.0 - router.amount_of_coverage
+                router.speed = inertia_weight * router.speed + ((cognitive_component[i] + social_component[i]) *
+                                                                speed_boost_factor)
+                if router.speed > max_velocity:
+                    router.speed = max_velocity
+                elif router.speed < -max_velocity:
+                    router.speed = -max_velocity
 
-    def initialize_swarm_for_rect(self, num_particles, routers, radius, height, width):
-        self.swarm = []
-        self.particles = []
-        for _ in range(num_particles):
-            self.particles.coverage = 0
-            self.particles.solution = []
-            self.particles.velocity = random.uniform(-5, 5)
-            self.routers.clear()
-            for _ in range(routers):
-                y = random.randint(0, height)
-                x = random.randint(0, width)
+                calculate_direction(router, inertia_weight, cognitive_component, self.height, self.width)
+
+    def initialize_velocities(self, max_velocity):
+        for particle in self.swarm:
+            for router in particle.solution:
+                router.speed = random.uniform(-max_velocity, max_velocity)
+                angle = random.uniform(0, 2 * math.pi)
+                router.vector = (math.cos(angle), math.sin(angle))
+
+    def initialize_swarm_for_rect(self, num_particles, num_routers, radius, height, width):
+        self.particles = [particle_list() for _ in range(self.num_particles)]
+        for i in range(num_particles):
+            routers = []
+            for _ in range(num_routers):
+                y = random.randint(0, int(height))
+                x = random.randint(0, int(width))
                 router = Router(x, y, radius)
-                self.routers.append(router)
-            self.particles.append(self.routers)
-        self.swarm.append(self.particles)
-        self.fitness_function(self.swarm, self.clients, 5)
-        return self.swarm
+                routers.append(router)
+            self.particles[i].solution = routers
+        self.swarm = self.particles
 
     def initialize_swarm_for_image(self, num_particles, routers, radius, shape_polygon):
-        self.swarm = []
-        self.particles = []
-        for _ in range(num_particles):
-            self.particles.coverage = 0
-            self.particles.solution = []
-            self.particles.velocity = random.uniform(-5, 5)
-            self.routers.clear()
+        self.particles = [particle_list() for _ in range(self.num_particles)]
+        for i in range(num_particles):
+            routers = []
             while True:
                 y = random.randint(0, 1800)
                 x = random.randint(0, 1800)
@@ -139,37 +154,41 @@ class PSO:
                 if is_inside == 1:
                     router = Router(x, y, radius)
                     self.routers.append(router)
-                if len(self.particles) == routers:
-                    self.particles.append(self.routers)
+                if len(self.particles) == len(routers):
+                    self.particles[i].solution = routers
                     break
         self.swarm.append(self.particles)
-        self.fitness_function(self.swarm, self.clients, 5)
-        return self.swarm
 
-    def fitness_function(self, client_locations, radius):
-
-        for particle, j in self.swarm:
-            for router, i in particle:
-                counter = 0
-                for client in client_locations:
-                    if self.isItCovered(router, client, radius):
-                        counter += 1
-            particle.sort(key=lambda r: router.amount_of_coverage, reverse=True)
-
+    def update_best_global_particle(self):
         for particle in self.swarm:
-            total_coverage = sum(router.amount_of_coverage for router in particle)
-            particle.coverage = (total_coverage / (len(client_locations) * len(particle)) * 100)
+            if self.global_best.coverage < particle.coverage:
+                self.global_best.coverage = particle.coverage
+                self.global_best.solution = particle.solution
 
-
-    def isItCovered(self, router, client, radius):
-        distance = abs(math.sqrt(((router[0] - client.x) ** 2) + ((router[1] - client.y) ** 2)))
-        return distance <= radius
+    def update_best_particle(self):
+        for i, particle in enumerate(self.swarm):
+            if self.best[i].coverage < particle.coverage:
+                self.best[i].coverage = particle.coverage
+                self.best[i].solution = particle.solution
 
     def find_global_best_solution(self):
         pass
 
-    def update_router_locations(self, solution, velocity):
-        pass
+    def update_routers_locations(self, current_solution, velocities):
+        updated_solution = []
+
+        for router, velocity in zip(current_solution, velocities):
+            x, y = router.x, router.y
+            new_x = x + velocity * router.vector[0]  # Update the x-coordinate
+            new_y = y + velocity * router.vector[1]  # Update the y-coordinate
+
+            # Ensure the router stays within bounds (if needed)
+            # Add boundary conditions if routers should stay within certain limits
+
+            updated_router = Router(new_x, new_y, router.radius)
+            updated_solution.append(updated_router)
+
+        return updated_solution
 
     def continue_button(self):
         self.pause_event.clear()
@@ -177,13 +196,5 @@ class PSO:
     def pause_button(self):
         self.pause_event.set()
 
-    def termination_condition(self, iteration):
+    def output_metrics(self):
         pass
-
-    def visualize_solution(self, solution):
-        pass
-
-    def output_metrics(self, global_best_solution):
-        pass
-
-

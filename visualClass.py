@@ -1,9 +1,11 @@
+import math
 import time
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Circle
 import tkinter as tk
-import GA_Class
+# import GA_Class
+# import PSO_Class
 
 
 class Visual:
@@ -104,7 +106,7 @@ class Visual:
 
     # update_visualization_for_photo(self.routers, self.clients, 5, self.num_photo)
 
-    def mark_covered_clients(self, routers, clients, radius):
+    def mark_covered_clients(self, routers, clients, radius, algotype):
         self.routers = routers
         self.clients = clients
         self.radius = radius
@@ -112,5 +114,12 @@ class Visual:
         for client in self.clients:
             client.in_range = False
             for router in self.routers:
-                if GA_Class.GA.isItCovered(self.tk_screen2, router, client, radius):
+                if self.check_coverage(router, client, radius, algotype):
                     client.in_range = True
+
+    def check_coverage(self, router, client, radius, algotype):
+        if algotype == 'GA':
+            distance = abs(math.sqrt(((router[0] - client.x) ** 2) + ((router[1] - client.y) ** 2)))
+        else:
+            distance = abs(math.sqrt(((router.x - client.x) ** 2) + ((router.y - client.y) ** 2)))
+        return distance <= radius

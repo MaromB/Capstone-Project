@@ -145,10 +145,11 @@ class GA:
                 if iteration == 0 and self.check_image:
                     self.current_population = initialize_population_for_image(20, int(self.routers),
                                                                               self.imageManager.shape_polygon)
-
+                    self.visual = Visual(tk_screen2)
                 elif iteration == 0 and not self.check_image:
                     self.current_population = initialize_population(20, int(self.routers), self.space.height,
                                                                     self.space.width)
+                    self.visual = Visual(tk_screen2)
                 # Evaluate the fitness of each solution in the population
                 fitness_scores = self.fitness_function(self.current_population, self.clients, 5)
                 # Select parents for crossover (you can use various selection methods)
@@ -173,11 +174,10 @@ class GA:
                     fitness_scores = mutated_fitness_scores
                 # Visualize the best current state of the routers
                 self.routers, coverage_percentage = best_configuration_output(self.current_population, fitness_scores)
-                if not self.visual:
-                    self.visual = Visual(tk_screen2)
+
                 self.second_screen.iteration_number.set("Iteration number:       " + str(iteration + 1))
                 self.second_screen.coverage_percentage.set("Coverage:            " + str(coverage_percentage) + "%")
-                self.visual.mark_covered_clients(self.routers, self.clients, 5)
+                self.visual.mark_covered_clients(self.routers, self.clients, 5, 'GA')
                 if self.check_image:
                     self.visual.update_visualization_for_image(self.routers, self.clients, 5,
                                                                self.imageManager.original_image)
@@ -200,7 +200,7 @@ class GA:
             counter = 0
             for router in routers:
                 for client in client_locations:
-                    if self.isItCovered(router, client, radius):
+                    if self.visual.check_coverage(router, client, radius, 'GA'):
                         counter += 1
             total_coverage.append(counter / len(client_locations) * 100)
         return total_coverage
@@ -242,11 +242,11 @@ class GA:
         for router in routers[1:]:
             overlapping = False
             if checkOverlapForOneRouter(router, resolved_routers, radius):
-                new_router = self.findNewCoordinates(height, width, shape_polygon)
+                new_router = self.find_new_coordinates(height, width, shape_polygon)
                 overlapping = True
             if overlapping:
                 while checkOverlapForOneRouter(new_router, resolved_routers, radius):
-                    new_router = self.findNewCoordinates(height, width, shape_polygon)
+                    new_router = self.find_new_coordinates(height, width, shape_polygon)
                 resolved_routers.append(new_router)
             else:
                 resolved_routers.append(router)
@@ -263,11 +263,7 @@ class GA:
             routers_population.append(routers_without_overlap)
         return routers_population
 
-    def isItCovered(self, router, client, radius):
-        distance = abs(math.sqrt(((router[0] - client.x) ** 2) + ((router[1] - client.y) ** 2)))
-        return distance <= radius
-
-    def findNewCoordinates(self, height, width, shape_polygon):
+    def find_new_coordinates(self, height, width, shape_polygon):
         new_x, new_y = 1, 1
         is_inside = -1.0
         if not self.check_image:
