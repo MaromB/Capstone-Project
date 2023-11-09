@@ -34,8 +34,8 @@ class Visual:
 
         self.ax.clear()
 
-        x_coords = [router[0] for router in self.routers]
-        y_coords = [router[1] for router in self.routers]
+        x_coords = [router.x for router in self.routers]
+        y_coords = [router.y for router in self.routers]
         self.ax.scatter(x_coords, y_coords, marker='o', color='blue', label='Routers')
 
         client_x_coords = [client.x for client in self.clients if client.in_range]
@@ -76,8 +76,8 @@ class Visual:
 
         _, _ = self.original_image.shape[1], self.original_image.shape[0]
 
-        x_coords = [router[0] * x_scale for router in self.routers]
-        y_coords = [router[1] * y_scale for router in self.routers]
+        x_coords = [router.x * x_scale for router in self.routers]
+        y_coords = [router.y * y_scale for router in self.routers]
         self.ax.scatter(x_coords, y_coords, marker='o', color='blue', label='Routers')
 
         client_x_coords = [client.x * x_scale for client in self.clients if client.in_range]
@@ -119,7 +119,7 @@ class Visual:
 
     def check_coverage(self, router, client, radius, algotype):
         if algotype == 'GA':
-            distance = abs(math.sqrt(((router[0] - client.x) ** 2) + ((router[1] - client.y) ** 2)))
+            distance = abs(math.sqrt(((router.x - client.x) ** 2) + ((router.y - client.y) ** 2)))
         else:
             distance = abs(math.sqrt(((router.x - client.x) ** 2) + ((router.y - client.y) ** 2)))
         return distance <= radius

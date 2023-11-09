@@ -32,16 +32,17 @@ class particle_list:
 
 
 class PSO:
-    def __init__(self, space, routers, clients, second_screen, check_image, height=None, width=None,
+    def __init__(self, space, routers, clients, second_screen, check_image, radius, height=None, width=None,
                  image_manager=None):
+        self.radius = radius
         self.swarm = None
         self.particles = None
         self.visual = None
         self.space = space
         self.routers = routers
         self.clients = clients
-        self.height = height
-        self.width = width
+        self.height = int(height)
+        self.width = int(width)
         self.second_screen = second_screen
         self.check_image = check_image
         self.thread = None
@@ -59,8 +60,7 @@ class PSO:
             inertia_weight = 0.7
 
             if self.check_image:
-                self.initialize_swarm_for_image(self.num_particles, int(self.routers), 5,
-                                                self.image_manager.shape_polygon)
+                self.initialize_swarm_for_image(self.num_particles, 5, self.image_manager.shape_polygon)
                 self.visual = Visual(tk_screen2)
             else:
                 self.initialize_swarm_for_rect(self.num_particles, int(self.routers), 5, self.height, self.width)
@@ -71,7 +71,7 @@ class PSO:
             for iteration in range(max_iterations):
                 self.update_swarm(inertia_weight, cognitive_weight, social_weight, max_velocity)
 
-                self.evaluate_fitness(5)
+                self.evaluate_fitness()
 
                 time.sleep(0.4)
                 self.update_best_particle()
@@ -85,15 +85,15 @@ class PSO:
         iteration_callback(1)
 
     def visualize_solution(self):
-        self.visual.mark_covered_clients(self.global_best, self.clients, 5, 'PSO')
+        self.visual.mark_covered_clients(self.global_best, self.clients, self.radius, 'PSO')
         self.visual.update_visualization_for_rectangle(self.global_best, self.clients, 5, self.height, self.width)
 
-    def evaluate_fitness(self, radius):
+    def evaluate_fitness(self):
         for particle in self.swarm:
             for router in particle.solution:
                 counter = 0
                 for client in self.clients:
-                    if self.visual.check_coverage(router, client, radius, 'PSO'):
+                    if self.visual.check_coverage(router, client, self.radius, 'PSO'):
                         counter += 1
                 router.amount_of_coverage = counter
             particle.solution.sort(key=lambda r: router.amount_of_coverage, reverse=True)
@@ -112,7 +112,7 @@ class PSO:
                                 for _ in range(self.num_particles)]
 
             for router in particle.solution:
-                self.evaluate_fitness(5)
+                self.evaluate_fitness()
                 speed_boost_factor = 1.0 - router.amount_of_coverage
                 router.speed = inertia_weight * router.speed + ((cognitive_component[i] + social_component[i]) *
                                                                 speed_boost_factor)
@@ -121,7 +121,7 @@ class PSO:
                 elif router.speed < -max_velocity:
                     router.speed = -max_velocity
 
-                calculate_direction(router, inertia_weight, cognitive_component, self.height, self.width)
+                calculate_direction(router, inertia_weight, cognitive_component[i], self.height, self.width)
 
     def initialize_velocities(self, max_velocity):
         for particle in self.swarm:
@@ -135,14 +135,14 @@ class PSO:
         for i in range(num_particles):
             routers = []
             for _ in range(num_routers):
-                y = random.randint(0, int(height))
-                x = random.randint(0, int(width))
+                y = random.randint(0, height)
+                x = random.randint(0, width)
                 router = Router(x, y, radius)
                 routers.append(router)
             self.particles[i].solution = routers
         self.swarm = self.particles
 
-    def initialize_swarm_for_image(self, num_particles, routers, radius, shape_polygon):
+    def initialize_swarm_for_image(self, num_particles, radius, shape_polygon):
         self.particles = [particle_list() for _ in range(self.num_particles)]
         for i in range(num_particles):
             routers = []

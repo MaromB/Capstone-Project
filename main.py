@@ -132,6 +132,7 @@ class SecondScreen(tk.Frame):
         self.first_screen = first_screen
         self.routers = routers
         self.clients = clients
+        self.radius = int(5)
         self.height = height
         self.width = width
         self.algotype = algotype
@@ -147,20 +148,20 @@ class SecondScreen(tk.Frame):
             self.space = Area()
             self.space.generate_random_clients_for_photo(int(self.clients), self.imageManager.shape_polygon)
             if algotype == 'GA':
-                self.algorithm_GA = GA(self.space, self.routers, self.space.clients, self, self.check_image, None, None,
-                                       self.imageManager)
+                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image, self.radius
+                                       , None, None, self.imageManager)
             else:
-                self.algorithm_PSO = PSO(self.space, self.routers, self.space.clients, self, self.check_image, None,
-                                         None, self.imageManager)
+                self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
+                                         self.radius, None, None, self.imageManager)
         else:
             self.space = Area(int(self.height), int(self.width))
             self.space.generate_random_clients(int(self.clients))
             if algotype == 'GA':
-                self.algorithm_GA = GA(self.space, self.routers, self.space.clients, self, self.check_image, self.height
-                                       , self.width, None)
+                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image, self.radius
+                                       , self.height, self.width, None)
             else:
-                self.algorithm_PSO = PSO(self.space, self.routers, self.space.clients, self, self.check_image,
-                                         self.height, self.width, None)
+                self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
+                                         self.radius, self.height, self.width, None)
         self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.is_paused = False
@@ -237,7 +238,7 @@ class SecondScreen(tk.Frame):
         else:
             self.is_paused = True
             self.pause_continue_button.config(text="Continue")
-            if self.algotype == 'PSO':
+            if self.algotype == 'GA':
                 self.algorithm_GA.pause_button()
             else:
                 self.algorithm_PSO.pause_button()

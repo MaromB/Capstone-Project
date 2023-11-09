@@ -3,43 +3,15 @@ import random
 import threading
 import time
 import cv2
+
+from routerClass import Router
 from visualClass import Visual
 import numpy as np
 
 
-def initialize_population(num_solutions, routers, height, width):
-    population = []
-    for _ in range(num_solutions):
-        solution = []
-        for _ in range(routers):
-            y = random.randint(0, height)
-            x = random.randint(0, width)
-            solution.append((x, y))
-        population.append(solution)
-    return population
-
-
-def initialize_population_for_image(num_solutions, routers, shape_polygon):
-    population = []
-    for _ in range(num_solutions):
-        solution = []
-        while True:
-            y = random.randint(0, 1800)
-            x = random.randint(0, 1800)
-            point = (x, y)
-            is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
-            if is_inside == 1:
-                solution.append((x, y))
-            if len(solution) == routers:
-                break
-        population.append(solution)
-    return population
-
-
-def select_parents(population, fitness_scores, num_parents, tournament_size=5):
+def select_parents(population, fitness_scores, num_parents, tournament_size=1):
     selected_parents = []
     while len(selected_parents) < num_parents:
-        # Perform tournament selection
         tournament_indices = np.random.choice(len(population), tournament_size, replace=False)
         tournament_fitness = [fitness_scores[i] for i in tournament_indices]
         selected_index = tournament_indices[np.argmax(tournament_fitness)]
@@ -87,21 +59,10 @@ def router_placement_crossover(selected_parents):
 def is_better(new_fitness_scores, old_fitness_scores):
     new_total_coverage = sum(new_fitness_scores)  # Calculate the total coverage of the new population
     old_total_coverage = sum(old_fitness_scores)
-
     return new_total_coverage > old_total_coverage
 
 
-def calculate_coverage(router_x, router_y, client_locations, radius):
-    coverage_count = 0
-    for client_x, client_y in client_locations:
-        distance = ((router_x - client_x) ** 2 + (router_y - client_y) ** 2) ** 0.5
-        if distance <= radius:
-            coverage_count += 1
-    return coverage_count
-
-
 def best_configuration_output(current_population, fitness_scores):
-    best_conf = []
     index = 0
     coverage_percentage = 0
     for i in range(len(current_population)):
@@ -112,25 +73,15 @@ def best_configuration_output(current_population, fitness_scores):
     return best_conf, int(coverage_percentage)
 
 
-def distanceBetweenRouters(router1, router2, radius):
-    distance = abs(math.sqrt(((router1[0] - router2[0]) ** 2) + ((router1[1] - router2[1]) ** 2)))
-    return distance <= 2 * radius
-
-
-def checkOverlapForOneRouter(router1, routers, radius):
-    for router2 in routers:
-        if distanceBetweenRouters(router1, router2, radius):
-            return True
-    return False
-
-
 class GA:
-    def __init__(self, space, routers, clients, second_screen, check_image, height=None, width=None, imageManager=None):
-        self.image_manager = None
+    def __init__(self, space, num_of_routers, clients, second_screen, check_image, radius, height=None, width=None,
+                 imageManager=None):
         self.visual = None
         self.space = space
-        self.routers = routers
+        self.num_of_routers = num_of_routers
+        self.routers_to_show = None
         self.clients = clients
+        self.radius = radius
         self.height = height
         self.width = width
         self.second_screen = second_screen
@@ -143,144 +94,171 @@ class GA:
         def iteration_callback(iteration):
             for iteration in range(max_iterations):
                 if iteration == 0 and self.check_image:
-                    self.current_population = initialize_population_for_image(20, int(self.routers),
-                                                                              self.imageManager.shape_polygon)
+                    self.current_population = self.initialize_population_for_image(4, self.num_of_routers,
+                                                                                   self.imageManager.shape_polygon)
                     self.visual = Visual(tk_screen2)
                 elif iteration == 0 and not self.check_image:
-                    self.current_population = initialize_population(20, int(self.routers), self.space.height,
-                                                                    self.space.width)
+                    self.height = self.space.height
+                    self.width = self.space.width
+                    self.current_population = self.initialize_population(4, self.num_of_routers)
                     self.visual = Visual(tk_screen2)
                 # Evaluate the fitness of each solution in the population
-                fitness_scores = self.fitness_function(self.current_population, self.clients, 5)
+                fitness_scores = self.fitness_function(self.current_population, self.clients)
                 # Select parents for crossover (you can use various selection methods)
                 descendants = select_parents(self.current_population, fitness_scores, int(len(fitness_scores) / 2))
                 # Create a new population using crossover
                 new_population = router_placement_crossover(descendants)
                 # Apply mutation to some solutions in the new population
                 if self.check_image:
-                    mutated_population = self.mutate_population(new_population, 0.2, None, None,
-                                                                self.imageManager.shape_polygon)
-                    resolved_routers = self.resolve_router_overlap_population(mutated_population, 5, None, None,
-                                                                              self.imageManager.shape_polygon)
+                    mutated_population = self.mutate_population(new_population, 0.2, self.imageManager.shape_polygon)
+                    resolved_routers = self.resolve_router_overlap_population(mutated_population)
                 else:
-                    mutated_population = self.mutate_population(new_population, 0.2, self.height, self.width, None)
-                    resolved_routers = self.resolve_router_overlap_population(mutated_population, 5, self.height,
-                                                                              self.width, None)
+                    mutated_population = self.mutate_population(new_population, 0.2, None)
+                    resolved_routers = self.resolve_router_overlap_population(mutated_population)
                 # Evaluate the fitness of the mutated population
-                mutated_fitness_scores = self.fitness_function(resolved_routers, self.clients, 5)
+                mutated_fitness_scores = self.fitness_function(resolved_routers, self.clients)
                 # Replace the current population with the mutated population if it's better
-                if is_better(mutated_fitness_scores, fitness_scores):
-                    self.current_population = resolved_routers
-                    fitness_scores = mutated_fitness_scores
+                #if is_better(mutated_fitness_scores, fitness_scores): ## check this!!!!!1111
+                self.current_population = resolved_routers
+                fitness_scores = mutated_fitness_scores
                 # Visualize the best current state of the routers
-                self.routers, coverage_percentage = best_configuration_output(self.current_population, fitness_scores)
+                self.routers_to_show, coverage_percentage = best_configuration_output(self.current_population, fitness_scores)
 
                 self.second_screen.iteration_number.set("Iteration number:       " + str(iteration + 1))
                 self.second_screen.coverage_percentage.set("Coverage:            " + str(coverage_percentage) + "%")
-                self.visual.mark_covered_clients(self.routers, self.clients, 5, 'GA')
+                self.visual.mark_covered_clients(self.routers_to_show, self.clients, self.radius, 'GA')
                 if self.check_image:
-                    self.visual.update_visualization_for_image(self.routers, self.clients, 5,
+                    self.visual.update_visualization_for_image(self.routers_to_show, self.clients, self.radius,
                                                                self.imageManager.original_image)
                 elif not self.check_image:
-                    self.visual.update_visualization_for_rectangle(self.routers, self.clients, 5, self.height,
+                    self.visual.update_visualization_for_rectangle(self.routers_to_show, self.clients, self.radius, self.height,
                                                                    self.width)
                 while self.pause_event.is_set():
                     time.sleep(0.1)
             while True:
                 time.sleep(1000)
 
-            # print("done")
             # return self.current_population
 
         iteration_callback(1)
 
-    def fitness_function(self, current_population, client_locations, radius):
+    def fitness_function(self, current_population, client_locations):
         total_coverage = []
         for routers in current_population:
             counter = 0
             for router in routers:
                 for client in client_locations:
-                    if self.visual.check_coverage(router, client, radius, 'GA'):
+                    if self.visual.check_coverage(router, client, self.radius, 'GA'):
                         counter += 1
             total_coverage.append(counter / len(client_locations) * 100)
         return total_coverage
 
-    def mutate_solution(self, solution, mutation_rate, height, width, shape_polygon):
+    def initialize_population(self, num_solutions, routers):
+        population = []
+        for _ in range(num_solutions):
+            solution = []
+            for _ in range(routers):
+                y = random.uniform(0, self.height)
+                x = random.uniform(0, self.width)
+                router = Router(x, y, self.radius)
+                solution.append(router)
+            population.append(solution)
+        return population
+
+    def initialize_population_for_image(self, num_solutions, routers, shape_polygon):
+        population = []
+        for _ in range(num_solutions):
+            solution = []
+            while True:
+                x = random.uniform(0, 1800)
+                y = random.uniform(0, 1800)
+                point = (x, y)
+                is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
+                if is_inside == 1:
+                    router = Router(x, y, self.radius)
+                    solution.append(router)
+                if len(solution) == routers:
+                    break
+            population.append(solution)
+        return population
+
+    def mutate_solution(self, solution, mutation_rate, shape_polygon):
         new_x, new_y = 1, 1
         mutated_solution = []
-        for router_x, router_y in solution:
+        for router in solution:
             is_inside = -1
             if random.random() < mutation_rate:
                 if not self.check_image:
-                    new_y = random.uniform(0, int(height))
-                    new_x = random.uniform(0, int(width))
+                    new_y = random.uniform(0, self.height)
+                    new_x = random.uniform(0, self.width)
                 while self.check_image and is_inside == -1:
                     new_y = random.uniform(0, 1800)
                     new_x = random.uniform(0, 1800)
                     point = (new_x, new_y)
                     is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
-            else:
-                new_x = router_x
-                new_y = router_y
-            # Add the mutated router to the new list
-            mutated_solution.append((int(new_x), int(new_y)))
+                router.x = new_x
+                router.y = new_y
+            mutated_solution.append(router)
         return mutated_solution
 
-    def mutate_population(self, population, mutation_rate, height1=None, width1=None, shape_polygon1=None):
-        height = height1
-        width = width1
+    def mutate_population(self, population, mutation_rate, shape_polygon1=None):
         shape_polygon = shape_polygon1
         mutated_population = []
         for solution in population:
-            mutated_solution = self.mutate_solution(solution, mutation_rate, height, width, shape_polygon)
+            mutated_solution = self.mutate_solution(solution, mutation_rate, shape_polygon)
             mutated_population.append(mutated_solution)
         return mutated_population
 
-    def resolve_router_overlap_solution(self, routers, radius, height, width, shape_polygon):
-        resolved_routers = [routers[0]]
-        new_router = ()
-        for router in routers[1:]:
-            overlapping = False
-            if checkOverlapForOneRouter(router, resolved_routers, radius):
-                new_router = self.find_new_coordinates(height, width, shape_polygon)
-                overlapping = True
-            if overlapping:
-                while checkOverlapForOneRouter(new_router, resolved_routers, radius):
-                    new_router = self.find_new_coordinates(height, width, shape_polygon)
-                resolved_routers.append(new_router)
-            else:
-                resolved_routers.append(router)
-        return resolved_routers
-
-    def resolve_router_overlap_population(self, population, radius, height1=None, width1=None, shape_polygon1=None):
-        height = height1
-        width = width1
-        shape_polygon = shape_polygon1
+    def resolve_router_overlap_population(self, population):
         routers_population = []
         for routers in population:
-            routers_without_overlap = self.resolve_router_overlap_solution(routers, radius, height, width,
-                                                                           shape_polygon)
+            routers_without_overlap = self.resolve_router_overlap_solution(routers)
             routers_population.append(routers_without_overlap)
         return routers_population
 
-    def find_new_coordinates(self, height, width, shape_polygon):
+    def resolve_router_overlap_solution(self, routers):
+        resolved_routers = [routers[0]]
+        for router in routers[1:]:
+            while self.check_overlap_for_one_router(router, resolved_routers):
+                router = self.find_new_coordinates()
+            resolved_routers.append(router)
+
+        return resolved_routers
+
+    def find_new_coordinates(self):
         new_x, new_y = 1, 1
         is_inside = -1.0
         if not self.check_image:
-            new_x = random.uniform(0, int(width))
-            new_y = random.uniform(0, int(height))
+            new_x = random.uniform(0, self.width)
+            new_y = random.uniform(0, self.height)
         while self.check_image and is_inside == -1.0:
             new_y = random.uniform(0, 1800)
             new_x = random.uniform(0, 1800)
             point = (new_x, new_y)
-            is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
-        new_router = (new_x, new_y)
+            is_inside = cv2.pointPolygonTest(self.imageManager.shape_polygon, point, measureDist=False)
+        new_router = Router(new_x, new_y, self.radius)
         return new_router
+
+    def check_overlap_for_one_router(self, router1, routers):
+        for router2 in routers:
+            if self.distance_between_routers(router1, router2):
+                return True
+        return False
+
+    def distance_between_routers(self, router1, router2):
+        distance = abs(math.sqrt(((router1.x - router2.x) ** 2) + ((router1.y - router2.y) ** 2)))
+        return distance <= 2 * self.radius
+
+    def calculate_coverage(self, router_x, router_y, client_locations):
+        coverage_count = 0
+        for client_x, client_y in client_locations:
+            distance = ((router_x - client_x) ** 2 + (router_y - client_y) ** 2) ** 0.5
+            if distance <= self.radius:
+                coverage_count += 1
+        return coverage_count
 
     def continue_button(self):
         self.pause_event.clear()
 
     def pause_button(self):
         self.pause_event.set()
-
-    # def pso_algorithm(self):
