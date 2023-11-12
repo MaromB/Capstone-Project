@@ -219,10 +219,10 @@ class SecondScreen(tk.Frame):
         self.pause_continue_button.grid(row=2, column=1, padx=(0, 200), pady=0)
 
         if algotype == 'GA':
-            self.thread = threading.Thread(target=self.algorithm_GA.GA_algorithm, args=(self.tk_screen2, 10000))
+            self.thread = threading.Thread(target=self.algorithm_GA.GA_algorithm, args=(self.tk_screen2, 1000000))
             self.thread.start()
         elif algotype == 'PSO':
-            self.thread = threading.Thread(target=self.algorithm_PSO.PSO_algorithm, args=(self.tk_screen2, 10000))
+            self.thread = threading.Thread(target=self.algorithm_PSO.PSO_algorithm, args=(self.tk_screen2, 1000000))
             self.thread.start()
         else:
             raise ValueError("Invalid algorithm type")

@@ -4,8 +4,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Circle
 import tkinter as tk
-# import GA_Class
-# import PSO_Class
 
 
 class Visual:
@@ -59,7 +57,7 @@ class Visual:
 
         self.canvas_widget.update()
         self.canvas.draw()
-        time.sleep(0.4)
+        #time.sleep(0.1)
 
     def update_visualization_for_image(self, routers, clients, radius, original_image):
         self.routers = routers
@@ -101,8 +99,8 @@ class Visual:
 
         self.canvas_widget.update()
         self.canvas.draw()
-        if len(routers + clients) < 500:
-            time.sleep(0.4)
+        #if len(routers + clients) < 500:
+            #time.sleep(0.1)
 
     # update_visualization_for_photo(self.routers, self.clients, 5, self.num_photo)
 

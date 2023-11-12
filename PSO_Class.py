@@ -85,8 +85,9 @@ class PSO:
         iteration_callback(1)
 
     def visualize_solution(self):
-        self.visual.mark_covered_clients(self.global_best, self.clients, self.radius, 'PSO')
-        self.visual.update_visualization_for_rectangle(self.global_best, self.clients, 5, self.height, self.width)
+        self.visual.mark_covered_clients(self.global_best.solution, self.clients, self.radius, 'PSO')
+        self.visual.update_visualization_for_rectangle(self.global_best.solution, self.clients, 5, self.height,
+                                                       self.width)
 
     def evaluate_fitness(self):
         for particle in self.swarm:
