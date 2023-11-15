@@ -3,7 +3,7 @@ import random
 import cv2
 
 from routerClass import Router
-from clientClass import Client
+from client_Class import Client
 
 class Area:
     def __init__(self, width=None, height=None):

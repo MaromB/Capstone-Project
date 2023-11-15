@@ -3,9 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 
 from PSO_Class import PSO
-from areaClass import Area
+from area_Class import Area
 from GA_Class import GA
-from imageClass import ImageManager
+from image_Class import ImageManager
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -127,6 +127,7 @@ class SecondScreen(tk.Frame):
     def __init__(self, root, first_screen, routers, clients, height, width, algotype, num_photo, check_image,
                  show_second_screen):
         super().__init__(root)
+        self.number_of_particle = '1'
         self.show_second_screen = show_second_screen
         self.root = root
         self.first_screen = first_screen
@@ -148,20 +149,20 @@ class SecondScreen(tk.Frame):
             self.space = Area()
             self.space.generate_random_clients_for_photo(int(self.clients), self.imageManager.shape_polygon)
             if algotype == 'GA':
-                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image, self.radius
-                                       , None, None, self.imageManager)
+                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image,
+                                       self.radius, None, None, self.imageManager)
             else:
                 self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                         self.radius, None, None, self.imageManager)
+                                         self.radius, self.number_of_particle, None, None, self.imageManager)
         else:
             self.space = Area(int(self.height), int(self.width))
             self.space.generate_random_clients(int(self.clients))
             if algotype == 'GA':
-                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image, self.radius
-                                       , self.height, self.width, None)
+                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image,
+                                       self.radius, self.height, self.width, None)
             else:
                 self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                         self.radius, self.height, self.width, None)
+                                         self.radius, self.number_of_particle, self.height, self.width, None)
         self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.is_paused = False
@@ -222,6 +223,13 @@ class SecondScreen(tk.Frame):
             self.thread = threading.Thread(target=self.algorithm_GA.GA_algorithm, args=(self.tk_screen2, 1000000))
             self.thread.start()
         elif algotype == 'PSO':
+            self.label_number_of_particle = ttk.Label(info_frame2, text="Number of particle:", font=info_frame2,
+                                                      background="light sky blue")
+            self.label_number_of_particle.grid(row=1, column=1, padx=0, pady=0)
+            self.number_of_particle = ttk.Combobox(info_frame2, width=5)
+            self.number_of_particle['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
+                                                 '14', '15', '16', '17', '18', '19', '20', 'Global')
+            self.number_of_particle.grid(row=1, column=2, padx=50, pady=0, sticky=tk.W)
             self.thread = threading.Thread(target=self.algorithm_PSO.PSO_algorithm, args=(self.tk_screen2, 1000000))
             self.thread.start()
         else:
@@ -242,7 +250,6 @@ class SecondScreen(tk.Frame):
                 self.algorithm_GA.pause_button()
             else:
                 self.algorithm_PSO.pause_button()
-
 
     def stop_button(self):
         self.tk_screen2.destroy()

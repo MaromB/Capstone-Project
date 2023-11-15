@@ -39,12 +39,12 @@ class GA:
             for iteration in range(max_iterations):
                 if iteration == 0 and self.check_image:
                     self.initialize_population_for_image(200, self.num_of_routers, self.imageManager.shape_polygon)
-                    self.visual = Visual(tk_screen2)
+                    self.visual = Visual(tk_screen2, 'GA')
                 elif iteration == 0 and not self.check_image:
                     self.height = self.space.height
                     self.width = self.space.width
-                    self.initialize_population(200, self.num_of_routers)
-                    self.visual = Visual(tk_screen2)
+                    self.initialize_population_for_rect(200, self.num_of_routers)
+                    self.visual = Visual(tk_screen2, 'GA')
 
                 self.new_population = copy.deepcopy(self.current_population)
 
@@ -61,20 +61,20 @@ class GA:
                 self.current_population = self.new_population
 
                 self.routers_to_show, coverage_percentage = self.best_configuration_output(fitness_scores)
-                self.second_screen.iteration_number.set("Iteration number:       " + str(iteration + 1))
-                self.second_screen.coverage_percentage.set("Coverage:            " + str(coverage_percentage) + "%")
-                self.visual.mark_covered_clients(self.routers_to_show, self.clients, self.radius, 'GA')
+                self.second_screen.iteration_number.set("Iteration number:     " + str(iteration + 1))
+                self.second_screen.coverage_percentage.set("Coverage:                " + str(coverage_percentage) + "%")
+                self.visual.mark_covered_clients(self.routers_to_show, self.clients, self.radius)
                 if self.check_image:
-                    self.visual.update_visualization_for_image(self.routers_to_show, self.clients, self.radius,
-                                                               self.imageManager.original_image)
+                    self.visual.update_visualization_for_image_GA(self.routers_to_show, self.clients, self.radius,
+                                                                  self.imageManager.original_image)
                 elif not self.check_image:
-                    self.visual.update_visualization_for_rectangle(self.routers_to_show, self.clients, self.radius,
-                                                                   self.height, self.width)
+                    self.visual.update_visualization_for_rect_GA(self.routers_to_show, self.clients, self.radius,
+                                                                 self.height, self.width)
                 while self.pause_event.is_set():
                     time.sleep(0.1)
             while True:
                 time.sleep(1000)
-                
+
         iteration_callback(1)
 
     def fitness_function(self, population):
@@ -88,7 +88,7 @@ class GA:
             total_coverage.append(counter / len(self.clients) * 100)
         return total_coverage
 
-    def initialize_population(self, num_solutions, num_of_routers):
+    def initialize_population_for_rect(self, num_solutions, num_of_routers):
         for _ in range(num_solutions):
             solution = []
             for _ in range(num_of_routers):
@@ -183,7 +183,7 @@ class GA:
             if distance <= self.radius:
                 coverage_count += 1
         return coverage_count
-    
+
     def best_configuration_output(self, fitness_scores):
         index = 0
         coverage_percentage = 0
