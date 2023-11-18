@@ -5,8 +5,8 @@ import time
 import copy
 import cv2
 import numpy as np
-from routerClass import Router
-from visualClass import Visual
+from router_Class import Router
+from visual_Class import Visual
 
 
 def is_better(new_fitness_scores, old_fitness_scores):

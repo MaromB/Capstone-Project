@@ -34,12 +34,8 @@ class Visual:
             self.canvas_widget2 = self.canvas2.get_tk_widget()
             self.canvas_widget2.pack(side=tk.LEFT, padx=20, pady=0)
 
-    def update_visualization_for_rect_PSO(self, swarm, clients, radius, height, width,
-                                          combobox_number_particle):
-        if combobox_number_particle == 'Global':
-            self.routers = swarm[1][combobox_number_particle].solution
-        else:
-            self.routers = swarm[0][combobox_number_particle].solution
+    def update_visualization_for_rect_PSO(self, routers, clients, radius, height, width):
+        self.routers = routers
         self.clients = clients
         self.radius = radius
         self.height = height
@@ -48,8 +44,8 @@ class Visual:
         # self.update_canvas2(swarm, combobox_number_particle)
         self.ax1.clear()
 
-        x_coords = [router.x for router in self.routers]
-        y_coords = [router.y for router in self.routers]
+        x_coords = [router.x for router in self.routers.solution]
+        y_coords = [router.y for router in self.routers.solution]
         self.ax1.scatter(x_coords, y_coords, marker='o', color='blue', label='Routers')
 
         client_x_coords = [client.x for client in self.clients if client.in_range]

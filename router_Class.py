@@ -4,7 +4,7 @@ class Router:
         self.y = y
         self.radius = radius
         self.amount_of_coverage = 0
-        self.speed = 0
+        self.velocity = 0
         self.vector = (0, 0)
 
     def __str__(self):

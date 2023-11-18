@@ -127,7 +127,6 @@ class SecondScreen(tk.Frame):
     def __init__(self, root, first_screen, routers, clients, height, width, algotype, num_photo, check_image,
                  show_second_screen):
         super().__init__(root)
-        self.number_of_particle = '1'
         self.show_second_screen = show_second_screen
         self.root = root
         self.first_screen = first_screen
@@ -141,32 +140,8 @@ class SecondScreen(tk.Frame):
         self.check_image = check_image
         self.second_screen = None
         self.iteration_number = tk.StringVar(value="Iteration number:         ")
+        self.sgc_number = tk.StringVar(value="Giant component size:            ")
         self.coverage_percentage = tk.StringVar(value="Coverage:            0%")
-        if check_image:
-            self.imageManager = ImageManager()
-            self.imageManager.load_image(self.num_photo)
-            self.imageManager.find_structure_shape()
-            self.space = Area()
-            self.space.generate_random_clients_for_photo(int(self.clients), self.imageManager.shape_polygon)
-            if algotype == 'GA':
-                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                       self.radius, None, None, self.imageManager)
-            else:
-                self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                         self.radius, self.number_of_particle, None, None, self.imageManager)
-        else:
-            self.space = Area(int(self.height), int(self.width))
-            self.space.generate_random_clients(int(self.clients))
-            if algotype == 'GA':
-                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                       self.radius, self.height, self.width, None)
-            else:
-                self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                         self.radius, self.number_of_particle, self.height, self.width, None)
-        self.fig, self.ax = plt.subplots(figsize=(6, 6))
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self)
-        self.is_paused = False
-
         self.tk_screen2 = tk.Toplevel()
         self.tk_screen2.title("WMNs Optimization - map")
         self.tk_screen2.configure(bg="light sky blue")
@@ -189,6 +164,41 @@ class SecondScreen(tk.Frame):
         info_frame2.pack(side=tk.TOP, anchor=tk.W, padx=20, pady=20)
         info_frame3 = ttk.Frame(self.tk_screen2, style="Custom.TFrame")
         info_frame3.pack(side=tk.BOTTOM, anchor=tk.S, padx=0, pady=10)
+
+        if check_image:
+            self.imageManager = ImageManager()
+            self.imageManager.load_image(self.num_photo)
+            self.imageManager.find_structure_shape()
+            self.space = Area()
+            self.space.generate_random_clients_for_photo(int(self.clients), self.imageManager.shape_polygon)
+            if algotype == 'GA':
+                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image,
+                                       self.radius, None, None, self.imageManager)
+            else:
+                self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
+                                         self.radius, self.number_of_particle, None, None, self.imageManager)
+        else:
+            self.space = Area(int(self.height), int(self.width))
+            self.space.generate_random_clients(int(self.clients))
+            if algotype == 'GA':
+                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image,
+                                       self.radius, self.height, self.width, None)
+            else:
+                self.label_number_of_particle = ttk.Label(info_frame2, text="Number of particle:", font=info_frame2,
+                                                          background="light sky blue")
+                self.label_number_of_particle.grid(row=1, column=1, padx=0, pady=0)
+                self.number_of_particle = ttk.Combobox(info_frame2, width=8)
+                self.number_of_particle['values'] = ('Global', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
+                                                     '12', '13', '14', '15', '16', '17', '18', '19', '20')
+                self.number_of_particle.grid(row=1, column=2, padx=50, pady=0, sticky=tk.W)
+                self.number_of_particle.set('Global')
+
+                self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
+                                         self.radius, self.number_of_particle, self.height, self.width, None)
+        self.fig, self.ax = plt.subplots(figsize=(6, 6))
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self)
+        self.is_paused = False
+
         self.top_label = ttk.Label(info_frame1, text="Optimization of routers placements in WMNs", font=lable_font,
                                    background="light sky blue")
         self.running_algorithm = ttk.Label(info_frame2, text="Running algorithm:", font=custom_font,
@@ -196,6 +206,9 @@ class SecondScreen(tk.Frame):
         self.name_algorithm = ttk.Label(info_frame2, text=self.algotype, font=custom_font, background="light sky blue")
         self.iteration_label = ttk.Label(info_frame2, textvariable=self.iteration_number, font=custom_font,
                                          background="light sky blue")
+        self.sgc_label = ttk.Label(info_frame2, textvariable=self.sgc_number, font=custom_font,
+                                   background="light sky blue")
+
         self.coverage_label = ttk.Label(info_frame2, textvariable=self.coverage_percentage, font=custom_font,
                                         background="light sky blue")
         if self.check_image:
@@ -223,13 +236,7 @@ class SecondScreen(tk.Frame):
             self.thread = threading.Thread(target=self.algorithm_GA.GA_algorithm, args=(self.tk_screen2, 1000000))
             self.thread.start()
         elif algotype == 'PSO':
-            self.label_number_of_particle = ttk.Label(info_frame2, text="Number of particle:", font=info_frame2,
-                                                      background="light sky blue")
-            self.label_number_of_particle.grid(row=1, column=1, padx=0, pady=0)
-            self.number_of_particle = ttk.Combobox(info_frame2, width=5)
-            self.number_of_particle['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
-                                                 '14', '15', '16', '17', '18', '19', '20', 'Global')
-            self.number_of_particle.grid(row=1, column=2, padx=50, pady=0, sticky=tk.W)
+            self.sgc_label.grid(row=2, column=1, padx=0, pady=0, sticky=tk.W)
             self.thread = threading.Thread(target=self.algorithm_PSO.PSO_algorithm, args=(self.tk_screen2, 1000000))
             self.thread.start()
         else:
