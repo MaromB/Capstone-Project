@@ -1,7 +1,5 @@
 import random
-
 import cv2
-
 from router_Class import Router
 from client_Class import Client
 

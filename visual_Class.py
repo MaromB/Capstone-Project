@@ -1,5 +1,4 @@
 import math
-import time
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Circle
@@ -7,7 +6,8 @@ import tkinter as tk
 
 
 class Visual:
-    def __init__(self, tk_screen2, algotype):
+    def __init__(self, tk_screen2, algotype, check_image):
+        self.check_image = None
         self.original_image = None
         self.width = None
         self.height = None
@@ -16,6 +16,7 @@ class Visual:
         self.routers = None
         self.router_plot = None
         self.tk_screen2 = tk_screen2
+        self.check_image = check_image
 
         self.fig1 = Figure(figsize=(7, 7))
         self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.tk_screen2)
@@ -44,8 +45,8 @@ class Visual:
         # self.update_canvas2(swarm, combobox_number_particle)
         self.ax1.clear()
 
-        x_coords = [router.x for router in self.routers.solution]
-        y_coords = [router.y for router in self.routers.solution]
+        x_coords = [router.x for router in self.routers]
+        y_coords = [router.y for router in self.routers]
         self.ax1.scatter(x_coords, y_coords, marker='o', color='blue', label='Routers')
 
         client_x_coords = [client.x for client in self.clients if client.in_range]
@@ -71,23 +72,7 @@ class Visual:
         self.canvas1.draw()
         #time.sleep(0.1)
 
-    def update_canvas2(self, swarm, combobox_number_particle):
-        self.ax2.clear()
-
-        x_coords = [particle.x for particle in swarm]
-        y_coords = [particle.y for particle in swarm]
-        self.ax2.scatter(x_coords, y_coords, marker='o', color='green', label='Particle')
-
-        self.ax2.set_xlim(0, 100)
-        self.ax2.set_ylim(0, 100)
-        self.fig2.subplots_adjust(right=0.84, top=0.84)
-
-        self.ax2.grid(True)
-
-        self.canvas_widget2.update()
-        self.canvas2.draw()
-
-    def update_visualization_for_image_GA(self, routers, clients, radius, original_image):
+    def update_visualization_for_image(self, routers, clients, radius, original_image):
         self.routers = routers
         self.clients = clients
         self.radius = radius
@@ -181,3 +166,18 @@ class Visual:
         distance = abs(math.sqrt(((router.x - client.x) ** 2) + ((router.y - client.y) ** 2)))
         return distance <= radius
 
+    def update_canvas2(self, swarm, combobox_number_particle):
+        self.ax2.clear()
+
+        x_coords = [particle.x for particle in swarm]
+        y_coords = [particle.y for particle in swarm]
+        self.ax2.scatter(x_coords, y_coords, marker='o', color='green', label='Particle')
+
+        self.ax2.set_xlim(0, 100)
+        self.ax2.set_ylim(0, 100)
+        self.fig2.subplots_adjust(right=0.84, top=0.84)
+
+        self.ax2.grid(True)
+
+        self.canvas_widget2.update()
+        self.canvas2.draw()

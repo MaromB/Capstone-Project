@@ -39,12 +39,12 @@ class GA:
             for iteration in range(max_iterations):
                 if iteration == 0 and self.check_image:
                     self.initialize_population_for_image(200, self.num_of_routers, self.imageManager.shape_polygon)
-                    self.visual = Visual(tk_screen2, 'GA')
+                    self.visual = Visual(tk_screen2, 'GA', self.check_image)
                 elif iteration == 0 and not self.check_image:
                     self.height = self.space.height
                     self.width = self.space.width
                     self.initialize_population_for_rect(200, self.num_of_routers)
-                    self.visual = Visual(tk_screen2, 'GA')
+                    self.visual = Visual(tk_screen2, 'GA', self.check_image)
 
                 self.new_population = copy.deepcopy(self.current_population)
 
@@ -65,7 +65,7 @@ class GA:
                 self.second_screen.coverage_percentage.set("Coverage:                " + str(coverage_percentage) + "%")
                 self.visual.mark_covered_clients(self.routers_to_show, self.clients, self.radius)
                 if self.check_image:
-                    self.visual.update_visualization_for_image_GA(self.routers_to_show, self.clients, self.radius,
+                    self.visual.update_visualization_for_image(self.routers_to_show, self.clients, self.radius,
                                                                   self.imageManager.original_image)
                 elif not self.check_image:
                     self.visual.update_visualization_for_rect_GA(self.routers_to_show, self.clients, self.radius,
@@ -83,7 +83,7 @@ class GA:
             counter = 0
             for router in routers:
                 for client in self.clients:
-                    if self.visual.check_coverage(router, client, self.radius, 'GA'):
+                    if self.visual.check_coverage(router, client, self.radius):
                         counter += 1
             total_coverage.append(counter / len(self.clients) * 100)
         return total_coverage
