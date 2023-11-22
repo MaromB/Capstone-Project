@@ -1,4 +1,3 @@
-import math
 import random
 import threading
 import time
@@ -20,29 +19,28 @@ def update_particle_position(list_of_position):
     particle_position = sorted(particle_position, key=lambda coord: (coord[0], coord[1]))
     return particle_position
 
+
 class PSO:
-    def __init__(self, space, routers, clients, second_screen, check_image, radius, combobox_number_particle, sgc_label,
-                 fitness_label, height=None, width=None, image_manager=None):
+    def __init__(self, space, second_screen, height=None, width=None, image_manager=None):
         self.visual = None
         self.social_component = []
         self.cognitive_component = []
-        self.combobox_number_particle = combobox_number_particle
-        self.sgc_label = sgc_label
-        self.fitness_label = fitness_label
-        self.radius = radius
         self.swarm = []
         self.particles = None
         self.space = space
-        self.routers = routers
-        self.clients = clients
+        self.clients = self.space.clients
         self.height = height
         self.width = width
         self.second_screen = second_screen
-        self.check_image = check_image
+        self.routers = int(self.second_screen.routers)
+        self.radius = self.second_screen.radius
+        self.check_image = self.second_screen.check_image
         self.thread = None
         self.num_particles = 20
         self.image_manager = image_manager
         self.pause_event = threading.Event()
+        self.start_time = time.time()
+        self.pause_time = 0
 
     def PSO_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
@@ -53,11 +51,11 @@ class PSO:
             if self.check_image:
                 max_velocity = 50
                 self.visual = Visual(tk_screen2, 'PSO', self.check_image)
-                self.initialize_swarm_for_image(self.num_particles, 5, self.image_manager.shape_polygon)
+                self.initialize_swarm_for_image(5)
             else:
                 max_velocity = 10
                 self.visual = Visual(tk_screen2, 'PSO', self.check_image)
-                self.initialize_swarm_for_rect(self.num_particles, int(self.routers), 5, self.height, self.width)
+                self.initialize_swarm_for_rect(int(self.routers))
 
             self.initialize_velocities(max_velocity)
 
@@ -74,25 +72,27 @@ class PSO:
                 time.sleep(0.4)
                 self.visualize_solution(iteration)
 
-                while self.pause_event.is_set():
-                    time.sleep(0.1)
+                if self.pause_event.is_set():
+                    self.pause_start_time = time.time()
+                    while self.pause_event.is_set():
+                        time.sleep(0.1)
+                    self.pause_time += time.time() - self.pause_start_time
 
-            self.output_metrics()  # Implement this func
             while True:
                 time.sleep(1000)
 
         iteration_callback(1)
 
-    def initialize_swarm_for_rect(self, num_particles, num_routers, radius, height, width):
+    def initialize_swarm_for_rect(self, num_routers):
         self.swarm.append([particle() for _ in range(self.num_particles)])
         self.swarm.append([particle() for _ in range(self.num_particles)])
         self.swarm.append(global_sol())
-        for i in range(num_particles):
+        for i in range(self.num_particles):
             routers = []
             for _ in range(num_routers):
-                y = random.uniform(0, height)
-                x = random.uniform(0, width)
-                router = Router(x, y, radius)
+                y = random.uniform(0, self.height)
+                x = random.uniform(0, self.width)
+                router = Router(x, y, self.radius)
                 routers.append(router)
             self.swarm[0][i].solution = routers
             self.swarm[0][i].position = update_particle_position(self.swarm[0][i].solution)
@@ -100,22 +100,22 @@ class PSO:
         self.update_best_particle()
         self.update_best_global_particle()
 
-    def initialize_swarm_for_image(self, num_particles, radius, shape_polygon):
+    def initialize_swarm_for_image(self, radius):
         self.swarm.append([particle() for _ in range(self.num_particles)])
         self.swarm.append([particle() for _ in range(self.num_particles)])
         self.swarm.append(global_sol())
 
-        for i in range(num_particles):
+        for i in range(self.num_particles):
             routers = []
             while True:
                 y = random.uniform(0, 1800)
                 x = random.uniform(0, 1800)
                 point = (x, y)
-                is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
+                is_inside = cv2.pointPolygonTest(self.image_manager.shape_polygon, point, measureDist=False)
                 if is_inside == 1:
                     router = Router(x, y, radius)
                     routers.append(router)
-                if num_particles == len(routers):
+                if self.num_particles == len(routers):
                     self.swarm[0][i].solution = routers
                     self.swarm[0][i].position = update_particle_position(self.swarm[0][i].solution)
                     break
@@ -160,6 +160,7 @@ class PSO:
             particle.fitness = 0.7 * particle.giant_component_size + 0.3 * particle.coverage
 
     def update_swarm(self, inertia_weight, cognitive_weight, social_weight, max_velocity):
+        global x, y
         for i in range(len(self.swarm[0])):
             self.cognitive_component.append(cognitive_weight * subtract_coordinates(self.swarm[1][i].position,
                                                                                     self.swarm[0][i].position))
@@ -185,12 +186,17 @@ class PSO:
                                    max(-max_velocity, min(router.velocity[1], max_velocity)))
                 router.x += router.velocity[0]
                 router.y += router.velocity[1]
-
-                if router.x > self.height or router.x < 0:
-                    router.x = random.uniform(0, self.height)
-                if router.y > self.width or router.y < 0:
-                    router.y = random.uniform(0, self.width)
-
+                if self.check_image:
+                    point = (router.x, router.y)
+                    while not cv2.pointPolygonTest(self.image_manager.shape_polygon, point, measureDist=False):
+                        router.y = random.uniform(0, 1800)
+                        router.x = random.uniform(0, 1800)
+                        point = (router.x, router.y)
+                else:
+                    if router.x > self.height or router.x < 0:
+                        router.x = random.uniform(0, self.height)
+                    if router.y > self.width or router.y < 0:
+                        router.y = random.uniform(0, self.width)
                 self.swarm[0][i].position[j] = (router.x, router.y)
 
     def update_best_global_particle(self):
@@ -204,13 +210,17 @@ class PSO:
                 self.swarm[1][i] = self.swarm[0][i]
 
     def visualize_solution(self, iteration):
-        value_of_combobox = self.combobox_number_particle.get()
         self.second_screen.iteration_number.set("Iteration number:       " + str(iteration + 1))
+        value_of_combobox = self.second_screen.number_of_particle.get()
+        elapsed_time = time.time() - self.start_time - self.pause_time
+        formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+        self.second_screen.time_text.set("Time:     " + formatted_time)
         if value_of_combobox == 'Global':
             coverage_percent = self.swarm[2].coverage
-            self.second_screen.coverage_percentage.set("Coverage:                 " + str(coverage_percent) + "%")
-            self.second_screen.SGC_text.set("Giant component size:    " + str(self.swarm[2].giant_component_size))
-            self.second_screen.fitness_text.set("Fitness score:          " + str(round(self.swarm[2].fitness, 2)))
+            self.second_screen.coverage_percentage.set("Coverage:                 " +
+                                                       str(round(coverage_percent, 2)) + "%")
+            self.second_screen.SGC_text.set("Giant component size:      " + str(self.swarm[2].giant_component_size))
+            self.second_screen.fitness_text.set("Fitness score:                  " + str(round(self.swarm[2].fitness, 2)))
             self.visual.mark_covered_clients(self.swarm[2].solution, self.clients, self.radius)
             if self.check_image:
                 self.visual.update_visualization_for_image(self.swarm[2].solution, self.clients, 5,
@@ -220,7 +230,8 @@ class PSO:
                                                               self.width)
         else:
             coverage_percent = self.swarm[0][int(value_of_combobox) - 1].coverage
-            self.second_screen.coverage_percentage.set("Coverage:                 " + str(coverage_percent) + "%")
+            self.second_screen.coverage_percentage.set("Coverage:                 "
+                                                       + str(round(coverage_percent, 2)) + "%")
             self.second_screen.SGC_text.set("Giant component size:    " +
                                             str(self.swarm[0][int(value_of_combobox) - 1].giant_component_size))
             self.second_screen.fitness_text.set("Fitness score:          " +
@@ -239,8 +250,3 @@ class PSO:
 
     def pause_button(self):
         self.pause_event.set()
-
-    def output_metrics(self):
-        pass
-
-

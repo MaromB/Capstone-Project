@@ -1,8 +1,8 @@
 class Client:
     def __init__(self, x, y):
-        self.x = x  # wight
-        self.y = y  # height
-        self.in_range = False  # Variable to indicate if the client is in router range
+        self.x = x
+        self.y = y
+        self.in_range = False
 
     def set_in_range(self, in_range):
         self.in_range = in_range

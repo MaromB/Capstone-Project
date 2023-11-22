@@ -61,8 +61,9 @@ class Visual:
             circle = Circle((x, y), self.radius, fill=False, color='red', linestyle='dotted', alpha=0.5, linewidth=2)
             self.ax1.add_patch(circle)
 
-        self.ax1.set_xlim(0, int(self.height))
-        self.ax1.set_ylim(0, int(self.width))
+        self.ax1.set_xlim(0, int(self.width))
+        self.ax1.set_ylim(0, int(self.height))
+        
         self.fig1.subplots_adjust(right=0.84, top=0.84)
         self.ax1.legend(['Routers', 'Clients covered', 'Clients not covered'], loc='upper right',
                         bbox_to_anchor=(1.22, 1.22), fontsize=9)
@@ -140,8 +141,8 @@ class Visual:
             circle = Circle((x, y), self.radius, fill=False, color='red', linestyle='dotted', alpha=0.5, linewidth=2)
             self.ax1.add_patch(circle)
 
-        self.ax1.set_xlim(0, int(self.height))
-        self.ax1.set_ylim(0, int(self.width))
+        self.ax1.set_xlim(0, int(self.width))
+        self.ax1.set_ylim(0, int(self.height))
         self.fig1.subplots_adjust(right=0.8, top=0.8)
         self.ax1.legend(['Routers', 'Clients covered', 'Clients not covered'], loc='upper right', bbox_to_anchor=(1.3
                                                                                                                  , 1.3))

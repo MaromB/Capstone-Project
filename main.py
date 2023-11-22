@@ -1,4 +1,5 @@
 import threading
+import time
 import tkinter as tk
 from tkinter import ttk
 from PSO_Class import PSO
@@ -94,17 +95,17 @@ class FirstScreen(tk.Frame):
             self.run_button.grid(row=11, columnspan=100, padx=400, pady=104)
         if self.check_image.get() == 2:
             label_Size = ttk.Label(self, text="Size of area:", font=self.custom_font, background="light sky blue")
-            label_width = ttk.Label(self, text="Width:         ", font=self.custom_font3, background="light sky blue")
-            self.entry_SizeH = ttk.Entry(self, width=7)
             label_height = ttk.Label(self, text="Height:       ", font=self.custom_font3, background="light sky blue")
             label_SizeX = ttk.Label(self, text="  x        ", font=self.custom_font, background="light sky blue")
+            label_width = ttk.Label(self, text="Width:         ", font=self.custom_font3, background="light sky blue")
+            self.entry_SizeH = ttk.Entry(self, width=7)
             self.entry_SizeL = ttk.Entry(self, width=7)
             label_Size.grid(row=8, column=0, padx=20, pady=5, sticky=tk.W)
-            self.entry_SizeH.grid(row=8, column=2, padx=(0, 0), pady=10, sticky=tk.W)
             label_height.grid(row=8, column=1, padx=0, pady=0, sticky=tk.E)
+            self.entry_SizeH.grid(row=8, column=2, padx=(0, 0), pady=10, sticky=tk.W)
             label_SizeX.grid(row=9, column=1, padx=0, pady=0, sticky=tk.E)
-            label_width.grid(row=10, column=1, padx=0, pady=7, sticky=tk.E)
             self.entry_SizeL.grid(row=10, column=2, padx=0, pady=0, sticky=tk.W)
+            label_width.grid(row=10, column=1, padx=0, pady=7, sticky=tk.E)
             self.run_button.grid(row=11, columnspan=100, padx=400, pady=47)
 
     def switch_to_second_screen(self):
@@ -141,7 +142,12 @@ class SecondScreen(tk.Frame):
         self.iteration_number = tk.StringVar(value="Iteration number:         ")
         self.coverage_percentage = tk.StringVar(value="Coverage:            0%")
         self.SGC_text = tk.StringVar(value="Giant component size:          ")
-        self.fitness_text = tk.StringVar(value="Fitness score:          ")
+        self.fitness_text = tk.StringVar(value="Fitness score:               ")
+        start_time = time.time()
+        elapsed_time = time.time() - start_time
+        formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+        self.time_text = tk.StringVar(value="Time:     " + formatted_time)
+
         self.tk_screen2 = tk.Toplevel()
         self.tk_screen2.title("WMNs Optimization - map")
         self.tk_screen2.configure(bg="light sky blue")
@@ -166,10 +172,13 @@ class SecondScreen(tk.Frame):
         info_frame3.pack(side=tk.BOTTOM, anchor=tk.S, padx=0, pady=10)
         self.sgc_label = ttk.Label(info_frame2, textvariable=self.SGC_text, font=custom_font,
                                    background="light sky blue")
-        self.fitness_label_label = ttk.Label(info_frame2, textvariable=self.fitness_text, font=custom_font,
-                                             background="light sky blue")
+        self.fitness_label = ttk.Label(info_frame2, textvariable=self.fitness_text, font=custom_font,
+                                       background="light sky blue")
+        self.time_label = ttk.Label(info_frame2, textvariable=self.time_text, font=custom_font,
+                                    background="light sky blue")
         self.sgc_label.grid(row=2, column=1, padx=0, pady=0, sticky=tk.W)
-        self.fitness_label_label.grid(row=3, column=1, padx=0, pady=0, sticky=tk.W)
+        self.fitness_label.grid(row=3, column=1, padx=0, pady=0, sticky=tk.W)
+        self.time_label.grid(row=2, column=2, padx=50, pady=0, sticky=tk.W)
         if algotype == 'PSO':
             self.label_number_of_particle = ttk.Label(info_frame2, text="Number of particle:", font=custom_font,
                                                       background="light sky blue")
@@ -177,7 +186,7 @@ class SecondScreen(tk.Frame):
             self.number_of_particle = ttk.Combobox(info_frame2, width=8)
             self.number_of_particle['values'] = ('Global', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
                                                  '12', '13', '14', '15', '16', '17', '18', '19', '20')
-            self.number_of_particle.grid(row=1, column=2, padx=10, pady=0, sticky=tk.W)
+            self.number_of_particle.grid(row=1, column=2, padx=0, pady=0, sticky=tk.W)
             self.number_of_particle.set('Global')
 
         if check_image:
@@ -187,22 +196,16 @@ class SecondScreen(tk.Frame):
             self.space = Area()
             self.space.generate_random_clients_for_photo(int(self.clients), self.imageManager.shape_polygon)
             if algotype == 'GA':
-                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                       self.radius, None, None, self.imageManager)
+                self.algorithm_GA = GA(self.space, self, None, None, self.imageManager)
             else:
-                self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                         self.radius, self.number_of_particle,  self.sgc_label, None, None,
-                                         self.imageManager)
+                self.algorithm_PSO = PSO(self.space, self, None, None, self.imageManager)
         else:
             self.space = Area(int(self.height), int(self.width))
             self.space.generate_random_clients(int(self.clients))
             if algotype == 'GA':
-                self.algorithm_GA = GA(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                       self.radius, self.height, self.width, None)
+                self.algorithm_GA = GA(self.space, self, self.height, self.width, None)
             else:
-                self.algorithm_PSO = PSO(self.space, int(self.routers), self.space.clients, self, self.check_image,
-                                         self.radius, self.number_of_particle, self.sgc_label, self.sgc_label,
-                                         int(self.height), int(self.width), None)
+                self.algorithm_PSO = PSO(self.space, self, int(self.height), int(self.width), None)
         self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)
         self.is_paused = False
@@ -232,7 +235,7 @@ class SecondScreen(tk.Frame):
         self.top_label.grid(row=0, column=0, padx=0, pady=5)
         self.running_algorithm.grid(row=1, column=0, padx=0, pady=0, sticky=tk.W)
         self.name_algorithm.grid(row=1, column=0, padx=(170, 0), pady=0, sticky=tk.W)
-        self.iteration_label.grid(row=2, column=0, padx=(0, 170), pady=5, sticky=tk.W)
+        self.iteration_label.grid(row=2, column=0, padx=(0, 100), pady=5, sticky=tk.W)
         self.coverage_label.grid(row=3, column=0, padx=0, pady=0, sticky=tk.W)
         self.details_label.grid(row=1, column=1, padx=0, pady=20)
         self.stop_button.grid(row=2, column=1, padx=(200, 0), pady=0)

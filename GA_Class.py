@@ -10,45 +10,47 @@ from visual_Class import Visual
 
 
 def is_better(new_fitness_scores, old_fitness_scores):
-    new_total_coverage = sum(new_fitness_scores)  # Calculate the total coverage of the new population
+    new_total_coverage = sum(new_fitness_scores)
     old_total_coverage = sum(old_fitness_scores)
     return new_total_coverage > old_total_coverage
 
 
 class GA:
-    def __init__(self, space, num_of_routers, clients, second_screen, check_image, radius, height=None, width=None,
+    def __init__(self, space, second_screen, height=None, width=None,
                  imageManager=None):
         self.new_population = []
         self.current_population = []
         self.visual = None
-        self.space = space
-        self.num_of_routers = num_of_routers
         self.routers_to_show = None
-        self.clients = clients
-        self.radius = radius
+        self.space = space
+        self.clients = self.space.clients
         self.height = height
         self.width = width
         self.second_screen = second_screen
-        self.check_image = check_image
+        self.num_of_routers = int(self.second_screen.routers)
+        self.radius = self.second_screen.radius
+        self.check_image = self.second_screen.check_image
         self.thread = None
         self.imageManager = imageManager
         self.pause_event = threading.Event()
+        self.start_time = time.time()
+        self.pause_time = 0
 
     def GA_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
             for iteration in range(max_iterations):
                 if iteration == 0 and self.check_image:
-                    self.initialize_population_for_image(200, self.num_of_routers, self.imageManager.shape_polygon)
+                    self.initialize_population_for_image(200)
                     self.visual = Visual(tk_screen2, 'GA', self.check_image)
                 elif iteration == 0 and not self.check_image:
                     self.height = self.space.height
                     self.width = self.space.width
-                    self.initialize_population_for_rect(200, self.num_of_routers)
+                    self.initialize_population_for_rect(200)
                     self.visual = Visual(tk_screen2, 'GA', self.check_image)
 
                 self.new_population = copy.deepcopy(self.current_population)
 
-                fitness_scores = self.fitness_function(self.new_population)
+                fitness_scores, coverage_list, giant_list = self.fitness_function(self.new_population)
 
                 self.select_parents(100, fitness_scores)
 
@@ -56,64 +58,90 @@ class GA:
 
                 self.mutate_population(0.05)
 
-                self.resolve_router_overlap_population(self.new_population)
+                #self.resolve_router_overlap_population(self.new_population)
 
                 self.current_population = self.new_population
 
-                self.routers_to_show, coverage_percentage = self.best_configuration_output(fitness_scores)
+                fitness_scores, coverage_list, giant_list = self.fitness_function(self.new_population)
+
+                self.routers_to_show, index = self.best_configuration_output(fitness_scores)
                 self.second_screen.iteration_number.set("Iteration number:     " + str(iteration + 1))
-                self.second_screen.coverage_percentage.set("Coverage:                " + str(coverage_percentage) + "%")
+                self.second_screen.coverage_percentage.set("Coverage:                " +
+                                                           str(round(coverage_list[index], 2)) + "%")
+                self.second_screen.SGC_text.set("Giant component size:      "
+                                                + str(giant_list[index]))
+                self.second_screen.fitness_text.set("Fitness score:                  "
+                                                    + str(round(fitness_scores[index], 2)))
+                elapsed_time = time.time() - self.start_time - self.pause_time
+                formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
+                self.second_screen.time_text.set("Time:     " + formatted_time)
                 self.visual.mark_covered_clients(self.routers_to_show, self.clients, self.radius)
                 if self.check_image:
                     self.visual.update_visualization_for_image(self.routers_to_show, self.clients, self.radius,
-                                                                  self.imageManager.original_image)
+                                                               self.imageManager.original_image)
                 elif not self.check_image:
                     self.visual.update_visualization_for_rect_GA(self.routers_to_show, self.clients, self.radius,
                                                                  self.height, self.width)
-                while self.pause_event.is_set():
-                    time.sleep(0.1)
+                if self.pause_event.is_set():
+                    self.pause_start_time = time.time()
+                    while self.pause_event.is_set():
+                        time.sleep(0.1)
+                    self.pause_time += time.time() - self.pause_start_time
             while True:
                 time.sleep(1000)
 
         iteration_callback(1)
 
-    def fitness_function(self, population):
-        total_coverage = []
-        for routers in population:
-            counter = 0
-            for router in routers:
-                for client in self.clients:
-                    if self.visual.check_coverage(router, client, self.radius):
-                        counter += 1
-            total_coverage.append(counter / len(self.clients) * 100)
-        return total_coverage
+    def calculate_sgc(self, routers):
+        visited_clients = set()
+        giant_component_size = 0
+        for router in routers:
+            for client in self.clients:
+                if self.visual.check_coverage(router, client, self.radius):
+                    visited_clients.add(client)
+            giant_component_size = max(giant_component_size, len(visited_clients))
+        return giant_component_size
 
-    def initialize_population_for_rect(self, num_solutions, num_of_routers):
+    def fitness_function(self, population):
+        coverage_list = []
+        giant_list = []
+        fit_list = []
+        for routers in population:
+            self.visual.mark_covered_clients(routers, self.clients, self.radius)
+            counter = 0
+            for client in self.clients:
+                if client.in_range:
+                    counter += 1
+            coverage_list.append(counter / len(self.clients) * 100)
+            giant_list.append(self.calculate_sgc(routers))
+            fit_list.append(0.7 * self.calculate_sgc(routers) + 0.3 * (counter / len(self.clients) * 100))
+
+        return fit_list, coverage_list, giant_list
+
+    def initialize_population_for_rect(self, num_solutions):
         for _ in range(num_solutions):
             solution = []
-            for _ in range(num_of_routers):
+            for _ in range(self.num_of_routers):
                 y = random.uniform(0, self.height)
                 x = random.uniform(0, self.width)
                 router = Router(x, y, self.radius)
                 solution.append(router)
             self.current_population.append(solution)
-        self.resolve_router_overlap_population(self.current_population)
 
-    def initialize_population_for_image(self, num_solutions, num_of_routers, shape_polygon):
+    def initialize_population_for_image(self, num_solutions):
         for _ in range(num_solutions):
             solution = []
             while True:
                 x = random.uniform(0, 1800)
                 y = random.uniform(0, 1800)
                 point = (x, y)
-                is_inside = cv2.pointPolygonTest(shape_polygon, point, measureDist=False)
+                is_inside = cv2.pointPolygonTest(self.imageManager.shape_polygon, point, measureDist=False)
                 if is_inside == 1:
                     router = Router(x, y, self.radius)
                     solution.append(router)
-                if len(solution) == num_of_routers:
+                if len(solution) == self.num_of_routers:
                     break
             self.current_population.append(solution)
-        self.resolve_router_overlap_population(self.current_population)
 
     def mutate_population(self, mutation_rate):
         for routers in self.new_population:
@@ -186,13 +214,11 @@ class GA:
 
     def best_configuration_output(self, fitness_scores):
         index = 0
-        coverage_percentage = 0
         for i in range(len(self.current_population)):
             if fitness_scores[index] <= fitness_scores[i]:
                 index = i
-                coverage_percentage = fitness_scores[i]
         best_conf = self.current_population[index]
-        return best_conf, int(coverage_percentage)
+        return best_conf, index
 
     def select_parents(self, num_parents, fitness_scores, tournament_size=4):
         copy_population = copy.deepcopy(self.new_population)
