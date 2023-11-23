@@ -3,21 +3,16 @@ import random
 import threading
 import time
 import copy
+from collections import defaultdict
+from itertools import combinations
 import cv2
 import numpy as np
 from router_Class import Router
 from visual_Class import Visual
 
 
-def is_better(new_fitness_scores, old_fitness_scores):
-    new_total_coverage = sum(new_fitness_scores)
-    old_total_coverage = sum(old_fitness_scores)
-    return new_total_coverage > old_total_coverage
-
-
 class GA:
-    def __init__(self, space, second_screen, height=None, width=None,
-                 imageManager=None):
+    def __init__(self, space, second_screen, height=None, width=None, imageManager=None):
         self.new_population = []
         self.current_population = []
         self.visual = None
@@ -35,18 +30,20 @@ class GA:
         self.pause_event = threading.Event()
         self.start_time = time.time()
         self.pause_time = 0
+        self.graph = None
+
 
     def GA_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
             for iteration in range(max_iterations):
                 if iteration == 0 and self.check_image:
                     self.initialize_population_for_image(200)
-                    self.visual = Visual(tk_screen2, 'GA', self.check_image)
+                    self.visual = Visual(self.second_screen, tk_screen2, 'GA', self.check_image)
                 elif iteration == 0 and not self.check_image:
                     self.height = self.space.height
                     self.width = self.space.width
                     self.initialize_population_for_rect(200)
-                    self.visual = Visual(tk_screen2, 'GA', self.check_image)
+                    self.visual = Visual(self.second_screen, tk_screen2, 'GA', self.check_image)
 
                 self.new_population = copy.deepcopy(self.current_population)
 
@@ -58,7 +55,7 @@ class GA:
 
                 self.mutate_population(0.05)
 
-                #self.resolve_router_overlap_population(self.new_population)
+                # self.resolve_router_overlap_population(self.new_population)
 
                 self.current_population = self.new_population
 
@@ -70,8 +67,12 @@ class GA:
                                                            str(round(coverage_list[index], 2)) + "%")
                 self.second_screen.SGC_text.set("Giant component size:      "
                                                 + str(giant_list[index]))
-                self.second_screen.fitness_text.set("Fitness score:                  "
-                                                    + str(round(fitness_scores[index], 2)))
+                if fitness_scores[index] < 10:
+                    self.second_screen.fitness_text.set("Fitness score:                    "
+                                                        + str(round(fitness_scores[index], 2)))
+                else:
+                    self.second_screen.fitness_text.set("Fitness score:                  "
+                                                        + str(round(fitness_scores[index], 2)))
                 elapsed_time = time.time() - self.start_time - self.pause_time
                 formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
                 self.second_screen.time_text.set("Time:     " + formatted_time)
@@ -92,14 +93,29 @@ class GA:
 
         iteration_callback(1)
 
+    def dfs(self, node, visited):
+        size = 1
+        visited.add(node)
+        for neighbor in self.graph[node]:
+            if neighbor not in visited:
+                size += self.dfs(neighbor, visited)
+        return size
+
     def calculate_sgc(self, routers):
-        visited_clients = set()
+        self.graph = defaultdict(list)
+        for router1, router2 in combinations(routers, 2):
+            distance = ((router1.x - router2.x) ** 2 + (router1.y - router2.y) ** 2) ** 0.5
+            if distance <= router1.radius and distance <= router2.radius:
+                self.graph[router1].append(router2)
+                self.graph[router2].append(router1)
+
         giant_component_size = 0
+        visited_nodes = set()
         for router in routers:
-            for client in self.clients:
-                if self.visual.check_coverage(router, client, self.radius):
-                    visited_clients.add(client)
-            giant_component_size = max(giant_component_size, len(visited_clients))
+            if router not in visited_nodes:
+                component_size = self.dfs(router, visited_nodes)
+                giant_component_size = max(giant_component_size, component_size)
+
         return giant_component_size
 
     def fitness_function(self, population):
@@ -112,9 +128,11 @@ class GA:
             for client in self.clients:
                 if client.in_range:
                     counter += 1
+            penalty = len(routers) - len(set((router.x, router.y) for router in routers))
             coverage_list.append(counter / len(self.clients) * 100)
             giant_list.append(self.calculate_sgc(routers))
-            fit_list.append(0.7 * self.calculate_sgc(routers) + 0.3 * (counter / len(self.clients) * 100))
+            fit_list.append(0.6 * self.calculate_sgc(routers) + 0.4 * (
+                        counter / len(self.clients) * 100) - 0.3 * penalty)
 
         return fit_list, coverage_list, giant_list
 

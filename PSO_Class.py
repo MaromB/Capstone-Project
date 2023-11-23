@@ -1,6 +1,8 @@
 import random
 import threading
 import time
+from collections import defaultdict
+from itertools import combinations
 import cv2
 from particle_Class import global_sol, particle
 from router_Class import Router
@@ -41,6 +43,7 @@ class PSO:
         self.pause_event = threading.Event()
         self.start_time = time.time()
         self.pause_time = 0
+        self.graph = None
 
     def PSO_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
@@ -50,11 +53,11 @@ class PSO:
 
             if self.check_image:
                 max_velocity = 50
-                self.visual = Visual(tk_screen2, 'PSO', self.check_image)
+                self.visual = Visual(self.second_screen, tk_screen2, 'PSO', self.check_image)
                 self.initialize_swarm_for_image(5)
             else:
                 max_velocity = 10
-                self.visual = Visual(tk_screen2, 'PSO', self.check_image)
+                self.visual = Visual(self.second_screen, tk_screen2, 'PSO', self.check_image)
                 self.initialize_swarm_for_rect(int(self.routers))
 
             self.initialize_velocities(max_velocity)
@@ -128,14 +131,30 @@ class PSO:
             particle.velocity = (random.uniform(-max_velocity, max_velocity),
                                  random.uniform(-max_velocity, max_velocity))
 
+    def dfs(self, node, visited):
+        size = 1
+        visited.add(node)
+        for neighbor in self.graph[node]:
+            if neighbor not in visited:
+                size += self.dfs(neighbor, visited)
+        return size
+
     def calculate_sgc(self, routers):
-        visited_clients = set()
+        self.graph = defaultdict(list)
+        for router1, router2 in combinations(routers, 2):
+            distance = ((router1.x - router2.x) ** 2 + (router1.y - router2.y) ** 2) ** 0.5
+            if distance <= router1.radius and distance <= router2.radius:
+                self.graph[router1].append(router2)
+                self.graph[router2].append(router1)
+
         giant_component_size = 0
+        visited_nodes = set()
         for router in routers:
-            for client in self.clients:
-                if self.visual.check_coverage(router, client, self.radius):
-                    visited_clients.add(client)
-            giant_component_size = max(giant_component_size, len(visited_clients))
+            position = (router.x, router.y)
+            if position not in visited_nodes:
+                component_size = self.dfs(router, visited_nodes)
+                giant_component_size = max(giant_component_size, component_size)
+
         return giant_component_size
 
     def evaluate_fitness(self):
@@ -147,17 +166,16 @@ class PSO:
                         counter += 1
                 router.amount_of_coverage = counter
             particle.solution.sort(key=lambda r: router.amount_of_coverage, reverse=True)
-
-        for particle in self.swarm[0]:
             self.visual.mark_covered_clients(particle.solution, self.clients, self.radius)
             counter = 0
+            # it did it for all the particles, I should do it for each particle separate.
             for client in self.clients:
                 if client.in_range:
                     counter += 1
+            penalty = len(particle.solution) - len(set((router.x, router.y) for router in particle.solution))
             particle.coverage = int((counter / (len(self.clients))) * 100)
             particle.giant_component_size = self.calculate_sgc(particle.solution)
-
-            particle.fitness = 0.7 * particle.giant_component_size + 0.3 * particle.coverage
+            particle.fitness = (0.6 * particle.giant_component_size + 0.4 * particle.coverage) - 0.3 * penalty
 
     def update_swarm(self, inertia_weight, cognitive_weight, social_weight, max_velocity):
         global x, y
@@ -219,8 +237,14 @@ class PSO:
             coverage_percent = self.swarm[2].coverage
             self.second_screen.coverage_percentage.set("Coverage:                 " +
                                                        str(round(coverage_percent, 2)) + "%")
-            self.second_screen.SGC_text.set("Giant component size:      " + str(self.swarm[2].giant_component_size))
-            self.second_screen.fitness_text.set("Fitness score:                  " + str(round(self.swarm[2].fitness, 2)))
+            self.second_screen.SGC_text.set("Giant component size:      "
+                                            + str(self.swarm[2].giant_component_size))
+            if self.swarm[2].fitness < 10:
+                self.second_screen.fitness_text.set("Fitness score:                    "
+                                                    + str(round(self.swarm[2].fitness, 2)))
+            else:
+                self.second_screen.fitness_text.set("Fitness score:                  "
+                                                    + str(round(self.swarm[2].fitness, 2)))
             self.visual.mark_covered_clients(self.swarm[2].solution, self.clients, self.radius)
             if self.check_image:
                 self.visual.update_visualization_for_image(self.swarm[2].solution, self.clients, 5,
@@ -234,8 +258,12 @@ class PSO:
                                                        + str(round(coverage_percent, 2)) + "%")
             self.second_screen.SGC_text.set("Giant component size:    " +
                                             str(self.swarm[0][int(value_of_combobox) - 1].giant_component_size))
-            self.second_screen.fitness_text.set("Fitness score:          " +
-                                                str(round(self.swarm[0][int(value_of_combobox) - 1].fitness, 2)))
+            if self.swarm[0][int(value_of_combobox) - 1].fitness < 10:
+                self.second_screen.fitness_text.set("Fitness score:                    " +
+                                                    str(round(self.swarm[0][int(value_of_combobox) - 1].fitness, 2)))
+            else:
+                self.second_screen.fitness_text.set("Fitness score:                  " +
+                                                    str(round(self.swarm[0][int(value_of_combobox) - 1].fitness, 2)))
             self.visual.mark_covered_clients(self.swarm[0][int(value_of_combobox) - 1].solution,
                                              self.clients, self.radius)
             if self.check_image:

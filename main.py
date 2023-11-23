@@ -1,5 +1,6 @@
 import threading
 import time
+import tkinter
 import tkinter as tk
 from tkinter import ttk
 from PSO_Class import PSO
@@ -145,6 +146,7 @@ class SecondScreen(tk.Frame):
         self.fitness_text = tk.StringVar(value="Fitness score:               ")
         start_time = time.time()
         elapsed_time = time.time() - start_time
+        self.speed_var = 0
         formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
         self.time_text = tk.StringVar(value="Time:     " + formatted_time)
 
@@ -153,6 +155,7 @@ class SecondScreen(tk.Frame):
         self.tk_screen2.configure(bg="light sky blue")
         style = ttk.Style()
         style.configure("Custom.TFrame", background="light sky blue")
+        style.configure("Horizontal.TScale", background="light sky blue")
 
         screen_width = self.tk_screen2.winfo_screenwidth()
         screen_height = self.tk_screen2.winfo_screenheight()
@@ -177,7 +180,7 @@ class SecondScreen(tk.Frame):
         self.time_label = ttk.Label(info_frame2, textvariable=self.time_text, font=custom_font,
                                     background="light sky blue")
         self.sgc_label.grid(row=2, column=1, padx=0, pady=0, sticky=tk.W)
-        self.fitness_label.grid(row=3, column=1, padx=0, pady=0, sticky=tk.W)
+        self.fitness_label.grid(row=3, column=1, padx=(0, 20), pady=0, sticky=tk.W)
         self.time_label.grid(row=2, column=2, padx=50, pady=0, sticky=tk.W)
         if algotype == 'PSO':
             self.label_number_of_particle = ttk.Label(info_frame2, text="Number of particle:", font=custom_font,
@@ -186,7 +189,6 @@ class SecondScreen(tk.Frame):
             self.number_of_particle = ttk.Combobox(info_frame2, width=8)
             self.number_of_particle['values'] = ('Global', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
                                                  '12', '13', '14', '15', '16', '17', '18', '19', '20')
-            self.number_of_particle.grid(row=1, column=2, padx=0, pady=0, sticky=tk.W)
             self.number_of_particle.set('Global')
 
         if check_image:
@@ -217,9 +219,12 @@ class SecondScreen(tk.Frame):
         self.name_algorithm = ttk.Label(info_frame2, text=self.algotype, font=custom_font, background="light sky blue")
         self.iteration_label = ttk.Label(info_frame2, textvariable=self.iteration_number, font=custom_font,
                                          background="light sky blue")
-
         self.coverage_label = ttk.Label(info_frame2, textvariable=self.coverage_percentage, font=custom_font,
                                         background="light sky blue")
+        self.speed_label = ttk.Label(info_frame2, text="Speed:", font=custom_font, background="light sky blue")
+        self.speed_var = tkinter.IntVar()
+        self.speed_slider = ttk.Scale(info_frame2, from_=0, to=300, orient="horizontal", variable=self.speed_var,
+                                      length=150, style="Horizontal.TScale")
         if self.check_image:
             self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and"
                                                              f" image number {self.num_photo}", font=custom_font,
@@ -236,7 +241,11 @@ class SecondScreen(tk.Frame):
         self.running_algorithm.grid(row=1, column=0, padx=0, pady=0, sticky=tk.W)
         self.name_algorithm.grid(row=1, column=0, padx=(170, 0), pady=0, sticky=tk.W)
         self.iteration_label.grid(row=2, column=0, padx=(0, 100), pady=5, sticky=tk.W)
+        if algotype == 'PSO':
+            self.number_of_particle.grid(row=1, column=1, padx=(200, 0), pady=0, sticky=tk.W)
         self.coverage_label.grid(row=3, column=0, padx=0, pady=0, sticky=tk.W)
+        self.speed_label.grid(row=3, column=2, padx=50, pady=0, sticky=tk.W)
+        self.speed_slider.grid(row=3, column=2, padx=130, pady=0, sticky=tk.W)
         self.details_label.grid(row=1, column=1, padx=0, pady=20)
         self.stop_button.grid(row=2, column=1, padx=(200, 0), pady=0)
         self.pause_continue_button.grid(row=2, column=1, padx=(0, 200), pady=0)

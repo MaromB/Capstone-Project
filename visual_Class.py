@@ -1,4 +1,5 @@
 import math
+import time
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.patches import Circle
@@ -6,7 +7,7 @@ import tkinter as tk
 
 
 class Visual:
-    def __init__(self, tk_screen2, algotype, check_image):
+    def __init__(self, second_screen, tk_screen2, algotype, check_image):
         self.check_image = None
         self.original_image = None
         self.width = None
@@ -16,6 +17,7 @@ class Visual:
         self.routers = None
         self.router_plot = None
         self.tk_screen2 = tk_screen2
+        self.second_screen = second_screen
         self.check_image = check_image
 
         self.fig1 = Figure(figsize=(7, 7))
@@ -71,7 +73,8 @@ class Visual:
 
         self.canvas_widget1.update()
         self.canvas1.draw()
-        #time.sleep(0.1)
+        sleep_time = float(self.second_screen.speed_var.get()) / 100.0
+        time.sleep(sleep_time)
 
     def update_visualization_for_image(self, routers, clients, radius, original_image):
         self.routers = routers
@@ -113,8 +116,8 @@ class Visual:
 
         self.canvas_widget1.update()
         self.canvas1.draw()
-        #if len(routers + clients) < 500:
-            #time.sleep(0.1)
+        sleep_time = float(self.second_screen.speed_var.get()) / 100.0
+        time.sleep(sleep_time)
 
     def update_visualization_for_rect_GA(self, routers, clients, radius, height, width):
         self.routers = routers
@@ -150,7 +153,8 @@ class Visual:
 
         self.canvas_widget1.update()
         self.canvas1.draw()
-        # time.sleep(0.1)
+        sleep_time = float(self.second_screen.speed_var.get()) / 100.0
+        time.sleep(sleep_time)
 
     def mark_covered_clients(self, routers, clients, radius):
         self.routers = routers
@@ -163,7 +167,8 @@ class Visual:
                 if self.check_coverage(router, client, radius):
                     client.in_range = True
 
-    def check_coverage(self, router, client, radius):
+    @staticmethod
+    def check_coverage(router, client, radius):
         distance = abs(math.sqrt(((router.x - client.x) ** 2) + ((router.y - client.y) ** 2)))
         return distance <= radius
 
