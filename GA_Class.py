@@ -64,25 +64,25 @@ class GA:
                 self.routers_to_show, index = self.best_configuration_output(fitness_scores)
                 self.second_screen.iteration_number.set("Iteration number:     " + str(iteration + 1))
                 self.second_screen.coverage_percentage.set("Coverage:                " +
-                                                           str(round(coverage_list[index], 2)) + "%")
+                                                           str(round(coverage_list[index], 1)) + "%")
                 self.second_screen.SGC_text.set("Giant component size:      "
                                                 + str(giant_list[index]))
                 if fitness_scores[index] < 10:
                     self.second_screen.fitness_text.set("Fitness score:                    "
-                                                        + str(round(fitness_scores[index], 2)))
+                                                        + str(round(fitness_scores[index], 1)))
                 else:
                     self.second_screen.fitness_text.set("Fitness score:                  "
-                                                        + str(round(fitness_scores[index], 2)))
+                                                        + str(round(fitness_scores[index], 1)))
                 elapsed_time = time.time() - self.start_time - self.pause_time
                 formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
                 self.second_screen.time_text.set("Time:     " + formatted_time)
                 self.visual.mark_covered_clients(self.routers_to_show, self.clients, self.radius)
                 if self.check_image:
-                    self.visual.update_visualization_for_image(self.routers_to_show, self.clients, self.radius,
-                                                               self.imageManager.original_image)
+                    self.visual.update_parameters(self.routers_to_show, self.clients, self.radius, 'GA', 'image', None,
+                                                  None, self.imageManager.original_image)
                 elif not self.check_image:
-                    self.visual.update_visualization_for_rect_GA(self.routers_to_show, self.clients, self.radius,
-                                                                 self.height, self.width)
+                    self.visual.update_parameters(self.routers_to_show, self.clients, self.radius, 'GA', 'rect',
+                                                  self.height, self.width, None)
                 if self.pause_event.is_set():
                     self.pause_start_time = time.time()
                     while self.pause_event.is_set():
@@ -131,7 +131,7 @@ class GA:
             penalty = len(routers) - len(set((router.x, router.y) for router in routers))
             coverage_list.append(counter / len(self.clients) * 100)
             giant_list.append(self.calculate_sgc(routers))
-            fit_list.append(0.6 * self.calculate_sgc(routers) + 0.4 * (
+            fit_list.append(0.75 * self.calculate_sgc(routers) + 0.25 * (
                         counter / len(self.clients) * 100) - 0.3 * penalty)
 
         return fit_list, coverage_list, giant_list

@@ -187,9 +187,9 @@ class SecondScreen(tk.Frame):
                                                       background="light sky blue")
             self.label_number_of_particle.grid(row=1, column=1, padx=0, pady=0, sticky=tk.W)
             self.number_of_particle = ttk.Combobox(info_frame2, width=8)
-            self.number_of_particle['values'] = ('Global', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
-                                                 '12', '13', '14', '15', '16', '17', '18', '19', '20')
-            self.number_of_particle.set('Global')
+            self.number_of_particle['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
+                                                 '14', '15', '16', '17', '18', '19', '20')
+            self.number_of_particle.set('1')
 
         if check_image:
             self.imageManager = ImageManager()
@@ -230,9 +230,10 @@ class SecondScreen(tk.Frame):
                                                              f" image number {self.num_photo}", font=custom_font,
                                            background="light sky blue")
         else:
-            self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and"
-                                                             f" {height}X{width} area size", font=custom_font,
+            self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and an area"
+                                                             f" of {height}X{width}", font=custom_font,
                                            background="light sky blue")
+
         self.stop_button = ttk.Button(info_frame3, text="Stop", command=self.stop_button, style="Custom.TButton")
         self.pause_continue_button = ttk.Button(info_frame3, text="Pause", command=self.toggle_pause_continue,
                                                 style="Custom.TButton")
