@@ -45,6 +45,7 @@ class PSO:
         self.start_time = time.time()
         self.pause_time = 0
         self.graph = None
+        self.fitness_for_graph = []
 
     def PSO_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
@@ -217,6 +218,7 @@ class PSO:
         for i in range(len(self.swarm[1])):
             if self.swarm[2].fitness <= self.swarm[1][i].fitness:
                 self.swarm[2] = copy.deepcopy(self.swarm[1][i])
+        self.fitness_for_graph.append(self.swarm[2].fitness)
 
     def update_best_particle(self):
         for i in range(len(self.swarm[1])):
@@ -243,36 +245,23 @@ class PSO:
                                                 + str(round(self.swarm[2].fitness, 1)))
         self.visual.mark_covered_clients(self.swarm[2].solution, self.clients, self.radius)
         if self.check_image:
-            self.visual.update_parameters(self.swarm[2].solution, self.clients, 5, 'PSO', 'global image', None, None,
-                                          self.image_manager.original_image)
+            self.visual.update_parameters(self.swarm[2].solution, self.clients, 5, 'PSO', 'global image',
+                                          self.fitness_for_graph, None, None, self.image_manager.original_image)
         else:
-            self.visual.update_parameters(self.swarm[2].solution, self.clients, 5, 'PSO', 'global', self.height,
+            self.visual.update_parameters(self.swarm[2].solution, self.clients, 5, 'PSO', 'global',
+                                          self.fitness_for_graph, self.height, self.width, None)
+        if value_of_combobox != 'Graph':
+            self.visual.mark_covered_clients(self.swarm[0][int(value_of_combobox) - 1].solution,
+                                             self.clients, self.radius)
+            if self.check_image:
+                self.visual.update_parameters(self.swarm[0][int(value_of_combobox) - 1].solution, self.clients, 5, 'PSO'
+                                              , 'Particles image', None, None, None, self.image_manager.original_image)
+            else:
+                self.visual.update_parameters(self.swarm[0][int(value_of_combobox) - 1].solution, self.clients, 5, 'PSO'
+                                              , 'Particles', None, self.height, self.width, None)
+        else:
+            self.visual.update_parameters(self.fitness_for_graph, self.clients, 5, 'PSO', 'graph', None, self.height,
                                           self.width, None)
-
-        """
-        Updates particles:
-        
-        coverage_percent = self.swarm[0][int(value_of_combobox) - 1].coverage
-        self.second_screen.coverage_percentage.set("Coverage:                 "
-                                                   + str(round(coverage_percent, 1)) + "%")
-        self.second_screen.SGC_text.set("Giant component size:    " +
-                                        str(self.swarm[0][int(value_of_combobox) - 1].giant_component_size))
-        if self.swarm[0][int(value_of_combobox) - 1].fitness < 10:
-            self.second_screen.fitness_text.set("Fitness score:                    " +
-                                                str(round(self.swarm[0][int(value_of_combobox) - 1].fitness, 1)))
-        else:
-            self.second_screen.fitness_text.set("Fitness score:                  " +
-                                                str(round(self.swarm[0][int(value_of_combobox) - 1].fitness, 1)))
-                                         
-        """
-        self.visual.mark_covered_clients(self.swarm[0][int(value_of_combobox) - 1].solution,
-                                         self.clients, self.radius)    
-        if self.check_image:
-            self.visual.update_parameters(self.swarm[0][int(value_of_combobox) - 1].solution, self.clients, 5, 'PSO',
-                                          'Particles image', None, None, self.image_manager.original_image)
-        else:
-            self.visual.update_parameters(self.swarm[0][int(value_of_combobox) - 1].solution, self.clients, 5, 'PSO',
-                                          'Particles', self.height, self.width, None)
 
     def continue_button(self):
         self.pause_event.clear()

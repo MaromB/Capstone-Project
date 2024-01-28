@@ -23,13 +23,14 @@ class Visual:
         self.second_screen = second_screen
         self.check_image = check_image
 
-        self.fig1 = Figure(figsize=(7, 7))
+        self.fig1 = Figure(figsize=(5.5, 5.5))
         self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.tk_screen2)
         self.ax1 = self.canvas1.figure.add_subplot(111)
         self.canvas_widget1 = self.canvas1.get_tk_widget()
 
         if algotype == 'GA':
             self.canvas_widget1.pack(side=tk.TOP, padx=0, pady=0)
+            self.canvas_widget1.pack(side=tk.LEFT, padx=120, pady=0)
         elif algotype == 'PSO':
             self.canvas_widget1.config(width=550, height=550)
             self.canvas_widget1.pack(side=tk.RIGHT, padx=20, pady=0)
@@ -40,11 +41,19 @@ class Visual:
             self.canvas_widget2 = self.canvas2.get_tk_widget()
             self.canvas_widget2.pack(side=tk.LEFT, padx=20, pady=0)
 
-    def update_parameters(self, routers, clients, radius, algo, type_of, height, width, original_image):
+        self.fig_graph = Figure(figsize=(3.5, 3.5))
+        self.canvas_graph = FigureCanvasTkAgg(self.fig_graph, master=self.tk_screen2)
+        self.ax_graph = self.canvas_graph.figure.add_subplot(111)
+        self.canvas_graph_widget = self.canvas_graph.get_tk_widget()
+        self.canvas_graph_widget.pack(side=tk.TOP, padx=0, pady=0)
+        self.canvas_graph_widget.pack(side=tk.RIGHT, padx=50, pady=0)
+
+    def update_parameters(self, routers, clients, radius, algo, type_of, fitness_for_graph,
+                          height, width, original_image):
         if algo == 'PSO':
             if type_of == 'global':
                 self.update_visualization_for_rect_PSO(routers, clients, radius, height, width, self.ax2,
-                                                       self.canvas_widget2, self.canvas2)
+                                                       self.canvas_widget2, self.canvas2, 'global')
             elif type_of == 'global image':
                 self.update_visualization_for_image(routers, clients, radius, original_image, self.ax2,
                                                     self.canvas_widget2, self.canvas2, 'PSO')
@@ -52,17 +61,21 @@ class Visual:
             elif type_of == 'Particles image':
                 self.update_visualization_for_image(routers, clients, radius, original_image, self.ax1,
                                                     self.canvas_widget1, self.canvas1, 'PSO')
-            else:
+            elif type_of == 'Particles':
                 self.update_visualization_for_rect_PSO(routers, clients, radius, height, width, self.ax1,
-                                                       self.canvas_widget1, self.canvas1)
+                                                       self.canvas_widget1, self.canvas1, 'particles')
+            else:
+                self.update_visualization_for_graph(routers, 'PSO')
         elif algo == 'GA':
             if type_of == 'image':
                 self.update_visualization_for_image(routers, clients, radius, original_image, self.ax1,
                                                     self.canvas_widget1, self.canvas1, 'GA')
             elif type_of == 'rect':
                 self.update_visualization_for_rect_GA(routers, clients, radius, height, width)
+            self.update_visualization_for_graph(fitness_for_graph, 'GA')
 
-    def update_visualization_for_rect_PSO(self, routers, clients, radius, height, width, ax, canvas_widget, canvas):
+    def update_visualization_for_rect_PSO(self, routers, clients, radius, height, width, ax, canvas_widget, canvas,
+                                          typeof):
         self.routers = routers
         self.clients = clients
         self.radius = radius
@@ -71,6 +84,10 @@ class Visual:
         self.ax = ax
         self.canvas_widget = canvas_widget
         self.canvas = canvas
+
+        if typeof == 'particles':
+            self.canvas_graph_widget.pack_forget()
+            self.canvas_widget1.pack()
 
         self.ax.clear()
 
@@ -181,8 +198,8 @@ class Visual:
 
         self.ax1.set_xlim(0, int(self.width))
         self.ax1.set_ylim(0, int(self.height))
-        self.fig1.subplots_adjust(right=0.8, top=0.8)
-        self.ax1.legend(['Routers', 'Clients covered', 'Clients not covered'], loc='upper right', bbox_to_anchor=(1.3
+        self.fig1.subplots_adjust(right=0.9, top=0.8)
+        self.ax1.legend(['Routers', 'Clients covered', 'Clients not covered'], loc='upper right', bbox_to_anchor=(1.1
                                                                                                                  , 1.3))
         self.ax1.grid(True)
 
@@ -207,18 +224,24 @@ class Visual:
         distance = abs(math.sqrt(((router.x - client.x) ** 2) + ((router.y - client.y) ** 2)))
         return distance <= radius
 
-    def update_canvas2(self, swarm, combobox_number_particle):
-        self.ax2.clear()
+    def update_visualization_for_graph(self, fitness_for_graph, algo):
+        if algo == 'PSO':
+            self.canvas_widget1.pack_forget()
+            self.canvas_graph_widget.pack()
+        self.ax_graph.clear()
+        iterations = range(1, len(fitness_for_graph) + 1)
+        self.ax_graph.plot(iterations, fitness_for_graph, marker='', color='blue', linestyle='-')
 
-        x_coords = [particle.x for particle in swarm]
-        y_coords = [particle.y for particle in swarm]
-        self.ax2.scatter(x_coords, y_coords, marker='o', color='green', label='Particle')
+        self.ax_graph.set_xlabel('Iteration Number')
+        self.ax_graph.set_ylabel('Fitness Value')
+        self.ax_graph.set_title('Fitness over Iterations')
 
-        self.ax2.set_xlim(0, 100)
-        self.ax2.set_ylim(0, 100)
-        self.fig2.subplots_adjust(right=0.84, top=0.84)
+        self.ax_graph.tick_params(axis='both', which='both', direction='in', top=True, right=True)
+        self.ax_graph.grid(True, linestyle='--', alpha=0.5)
+        self.fig_graph.tight_layout()  # Adjust layout to prevent clipping
 
-        self.ax2.grid(True)
+        self.canvas_graph.draw()
+        time.sleep(0.1)
+        self.canvas_graph_widget.update()
 
-        self.canvas_widget2.update()
-        self.canvas2.draw()
+

@@ -182,12 +182,13 @@ class SecondScreen(tk.Frame):
         self.sgc_label.grid(row=2, column=1, padx=0, pady=0, sticky=tk.W)
         self.fitness_label.grid(row=3, column=1, padx=(0, 20), pady=0, sticky=tk.W)
         self.time_label.grid(row=2, column=2, padx=50, pady=0, sticky=tk.W)
+
         if algotype == 'PSO':
             self.label_number_of_particle = ttk.Label(info_frame2, text="Number of particle:", font=custom_font,
                                                       background="light sky blue")
             self.label_number_of_particle.grid(row=1, column=1, padx=0, pady=0, sticky=tk.W)
             self.number_of_particle = ttk.Combobox(info_frame2, width=8)
-            self.number_of_particle['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
+            self.number_of_particle['values'] = ('Graph', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
                                                  '14', '15', '16', '17', '18', '19', '20')
             self.number_of_particle.set('1')
 

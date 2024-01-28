@@ -31,7 +31,7 @@ class GA:
         self.start_time = time.time()
         self.pause_time = 0
         self.graph = None
-
+        self.fitness_for_graph = []
 
     def GA_algorithm(self, tk_screen2, max_iterations):
         def iteration_callback(iteration):
@@ -57,11 +57,19 @@ class GA:
 
                 # self.resolve_router_overlap_population(self.new_population)
 
-                self.current_population = self.new_population
+                mutated_fitness_scores = self.fitness_function(self.new_population)
 
-                fitness_scores, coverage_list, giant_list = self.fitness_function(self.new_population)
+                # Replace the current population with the mutated population if it's better
+                if max(mutated_fitness_scores[0]) > max(fitness_scores):
+                    self.current_population = self.new_population
+                    self.fitness_scores = mutated_fitness_scores
+                else:
+                    self.current_population = self.current_population
+
+                fitness_scores, coverage_list, giant_list = self.fitness_function(self.current_population)
 
                 self.routers_to_show, index = self.best_configuration_output(fitness_scores)
+                self.fitness_for_graph.append(fitness_scores[index])
                 self.second_screen.iteration_number.set("Iteration number:     " + str(iteration + 1))
                 self.second_screen.coverage_percentage.set("Coverage:                " +
                                                            str(round(coverage_list[index], 1)) + "%")
@@ -78,11 +86,11 @@ class GA:
                 self.second_screen.time_text.set("Time:     " + formatted_time)
                 self.visual.mark_covered_clients(self.routers_to_show, self.clients, self.radius)
                 if self.check_image:
-                    self.visual.update_parameters(self.routers_to_show, self.clients, self.radius, 'GA', 'image', None,
-                                                  None, self.imageManager.original_image)
+                    self.visual.update_parameters(self.routers_to_show, self.clients, self.radius, 'GA', 'image',
+                                                  self.fitness_for_graph, None, None, self.imageManager.original_image,)
                 elif not self.check_image:
                     self.visual.update_parameters(self.routers_to_show, self.clients, self.radius, 'GA', 'rect',
-                                                  self.height, self.width, None)
+                                                  self.fitness_for_graph, self.height, self.width, None)
                 if self.pause_event.is_set():
                     self.pause_start_time = time.time()
                     while self.pause_event.is_set():
@@ -132,7 +140,7 @@ class GA:
             coverage_list.append(counter / len(self.clients) * 100)
             giant_list.append(self.calculate_sgc(routers))
             fit_list.append(0.75 * self.calculate_sgc(routers) + 0.25 * (
-                        counter / len(self.clients) * 100) - 0.3 * penalty)
+                    counter / len(self.clients) * 100) - 0.3 * penalty)
 
         return fit_list, coverage_list, giant_list
 
@@ -161,27 +169,85 @@ class GA:
                     break
             self.current_population.append(solution)
 
+    def select_parents(self, num_parents, fitness_scores, tournament_size=10):
+        copy_population = copy.deepcopy(self.new_population)
+        self.new_population.clear()
+        while len(self.new_population) < num_parents:
+            tournament_indices = np.random.choice(len(copy_population), tournament_size, replace=False)
+            tournament_fitness = [fitness_scores[i] for i in tournament_indices]
+            selected_index = tournament_indices[np.argmax(tournament_fitness)]
+            if copy_population[selected_index] not in self.new_population:
+                self.new_population.append(copy_population[selected_index])
+
+    def router_placement_crossover(self):
+        copy_population = copy.deepcopy(self.new_population)
+        self.new_population.clear()
+        num_iterations = 4 * len(copy_population)
+
+        for _ in range(num_iterations):
+            i, j = random.sample(range(len(copy_population)), 2)
+            cur_list = []
+            parent1 = copy_population[i]
+            parent2 = copy_population[j]
+
+            base_parent = parent1 if random.random() < 0.5 else parent2
+            inherit_probability = 0.5
+            routers_from_base = 0
+
+            for router_position in base_parent:
+                if random.random() < inherit_probability:
+                    cur_list.append(router_position)
+                    routers_from_base += 1
+
+            routers_to_inherit = len(base_parent) - routers_from_base
+            if routers_to_inherit > 0:
+                other_parent = parent2 if base_parent == parent1 else parent1
+                routers_to_inherit = min(routers_to_inherit, len(other_parent))
+                routers_inherited = random.sample(other_parent, routers_to_inherit)
+                cur_list.extend(routers_inherited)
+
+            self.new_population.append(cur_list)
+
     def mutate_population(self, mutation_rate):
         for routers in self.new_population:
-            self.mutate_solution(routers, mutation_rate)
+            new_x, new_y = 1, 1
+            changed = []
+            for i, router in enumerate(routers):
+                is_inside = -1
+                if random.random() < mutation_rate:
+                    if not self.check_image:
+                        new_x = random.uniform(0, self.width)
+                        new_y = random.uniform(0, self.height)
+                        changed.append(i)
+                    while self.check_image and is_inside == -1:
+                        new_x = random.uniform(0, 1800)
+                        new_y = random.uniform(0, 1800)
+                        point = (new_x, new_y)
+                        is_inside = cv2.pointPolygonTest(self.imageManager.shape_polygon, point, measureDist=False)
+                    router.x = new_x
+                    router.y = new_y
 
-    def mutate_solution(self, routers, mutation_rate):
-        new_x, new_y = 1, 1
-        changed = []
-        for i, router in enumerate(routers):
-            is_inside = -1
-            if random.random() < mutation_rate:
-                if not self.check_image:
-                    new_x = random.uniform(0, self.width)
-                    new_y = random.uniform(0, self.height)
-                    changed.append(i)
-                while self.check_image and is_inside == -1:
-                    new_x = random.uniform(0, 1800)
-                    new_y = random.uniform(0, 1800)
-                    point = (new_x, new_y)
-                    is_inside = cv2.pointPolygonTest(self.imageManager.shape_polygon, point, measureDist=False)
-                router.x = new_x
-                router.y = new_y
+    def best_configuration_output(self, fitness_scores):
+        index = 0
+        for i in range(len(self.current_population)):
+            if fitness_scores[index] <= fitness_scores[i]:
+                index = i
+        best_conf = self.current_population[index]
+        return best_conf, index
+
+    def calculate_coverage(self, router_x, router_y, client_locations):
+        coverage_count = 0
+        for client_x, client_y in client_locations:
+            distance = ((router_x - client_x) ** 2 + (router_y - client_y) ** 2) ** 0.5
+            if distance <= self.radius:
+                coverage_count += 1
+        return coverage_count
+
+    def continue_button(self):
+        self.pause_event.clear()
+
+    def pause_button(self):
+        self.pause_event.set()
 
     def resolve_router_overlap_population(self, population):
         copy_population = copy.deepcopy(population)
@@ -221,69 +287,3 @@ class GA:
     def distance_between_routers(self, router1, router2):
         distance = abs(math.sqrt(((router1.x - router2.x) ** 2) + ((router1.y - router2.y) ** 2)))
         return distance < 2 * self.radius
-
-    def calculate_coverage(self, router_x, router_y, client_locations):
-        coverage_count = 0
-        for client_x, client_y in client_locations:
-            distance = ((router_x - client_x) ** 2 + (router_y - client_y) ** 2) ** 0.5
-            if distance <= self.radius:
-                coverage_count += 1
-        return coverage_count
-
-    def best_configuration_output(self, fitness_scores):
-        index = 0
-        for i in range(len(self.current_population)):
-            if fitness_scores[index] <= fitness_scores[i]:
-                index = i
-        best_conf = self.current_population[index]
-        return best_conf, index
-
-    def select_parents(self, num_parents, fitness_scores, tournament_size=4):
-        copy_population = copy.deepcopy(self.new_population)
-        self.new_population.clear()
-        while len(self.new_population) < num_parents:
-            tournament_indices = np.random.choice(len(copy_population), tournament_size, replace=False)
-            tournament_fitness = [fitness_scores[i] for i in tournament_indices]
-            selected_index = tournament_indices[np.argmax(tournament_fitness)]
-            if copy_population[selected_index] not in self.new_population:
-                self.new_population.append(copy_population[selected_index])
-
-    def router_placement_crossover(self):
-        copy_population = copy.deepcopy(self.new_population)
-        self.new_population.clear()
-        cur_list = []
-        for _ in range(4):
-            for i in range(0, len(copy_population), 2):
-                parent1 = copy_population[i]
-                parent2 = copy_population[i + 1]
-
-                # Randomly choose one of the parents as the base placement
-                base_parent = parent1 if random.random() < 0.5 else parent2
-
-                # Probability of inheriting each router position (adjust as needed)
-                inherit_probability = 0.5
-                routers_from_base = 0
-                # Iterate through router positions in the base parent
-                for router_position in base_parent:
-                    # Decide whether to inherit this router position
-                    if random.random() < inherit_probability:
-                        cur_list.append(router_position)
-                        routers_from_base += 1
-
-                routers_to_inherit = len(base_parent) - routers_from_base
-
-                if routers_to_inherit > 0:
-                    other_parent = parent2 if base_parent == parent1 else parent1
-                    routers_to_inherit = min(routers_to_inherit, len(other_parent))
-                    routers_inherited = random.sample(other_parent, routers_to_inherit)
-                    cur_list.extend(routers_inherited)
-
-                if len(cur_list) == routers_to_inherit + routers_from_base:
-                    self.new_population.append(cur_list)
-                    cur_list = []
-
-    def continue_button(self):
-        self.pause_event.clear()
-
-    def pause_button(self):
-        self.pause_event.set()
