@@ -172,7 +172,7 @@ class PSO:
             penalty = len(particle.solution) - len(set((router.x, router.y) for router in particle.solution))
             particle.coverage = int((counter / (len(self.clients))) * 100)
             particle.giant_component_size = self.calculate_sgc(particle.solution)
-            particle.fitness = (0.75 * particle.giant_component_size + 0.25 * particle.coverage) - 0.3 * penalty
+            particle.fitness = ((0.75 * particle.giant_component_size + 0.25 * particle.coverage) - 0.3 * penalty )*3.6
 
     def update_swarm(self, inertia_weight, cognitive_weight, social_weight, max_velocity):
         global x, y
