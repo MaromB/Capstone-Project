@@ -14,6 +14,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class FirstScreen(tk.Frame):
     def __init__(self, root, show_second_screen):
         super().__init__(root)
+        self.image_display_label = None
+        self.imageManager = None
         self.entry_SizeL = None
         self.entry_SizeH = None
         self.photo_combobox = None
@@ -80,7 +82,20 @@ class FirstScreen(tk.Frame):
         self.label_method.grid(row=7, column=0, padx=20, pady=0, sticky=tk.W)
         self.option_Rect.grid(row=7, column=1, padx=0, pady=0, sticky=tk.E)
         self.option_Image.grid(row=7, column=2, padx=0, pady=0, sticky=tk.E)
-        self.run_button.grid(row=10, columnspan=100, padx=400, pady=150, sticky=tk.W)
+        self.run_button.grid(row=10, columnspan=100, padx=400, pady=184, sticky=tk.W)
+
+    def update_image_display(self, event=None):
+        # Retrieve the selected image number
+        selected_number = self.photo_combobox.get()
+        if selected_number:
+            # Assuming your ImageManager's preloaded_images dictionary uses integers as keys
+            image_number = int(selected_number)
+            # Retrieve the PhotoImage object; assuming it's the frame_image
+            selected_image = self.imageManager.preloaded_images[image_number][1]
+            # Update the label to display the selected image
+            self.image_display_label.configure(image=selected_image)
+            # Keep a reference to the image to prevent it from being garbage collected
+            self.image_display_label.image = selected_image
 
     def show_buttons(self):
         for row in range(8, 11):
@@ -90,10 +105,18 @@ class FirstScreen(tk.Frame):
         if self.check_image.get() == 1:
             choose_photo = ttk.Label(self, text="Structure:", font=self.custom_font, background="light sky blue")
             self.photo_combobox = ttk.Combobox(self, width=7)
+            if self.imageManager == None:
+                self.imageManager = ImageManager()
+                self.imageManager.preload_images(1, 13)
             self.photo_combobox['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13')
             choose_photo.grid(row=8, column=0, padx=20, pady=5, sticky=tk.W)
             self.photo_combobox.grid(row=8, column=1, padx=0, pady=0, sticky=tk.E)
-            self.run_button.grid(row=11, columnspan=100, padx=400, pady=104)
+            self.photo_combobox.bind("<<ComboboxSelected>>", self.update_image_display)
+            self.photo_combobox.set('1')
+            self.image_display_label = ttk.Label(self)
+            self.image_display_label.grid(row=8, column=2, padx=20, pady=5)
+            self.update_image_display()
+            self.run_button.grid(row=11, columnspan=100, padx=400, pady=20)
         if self.check_image.get() == 2:
             label_Size = ttk.Label(self, text="Size of area:", font=self.custom_font, background="light sky blue")
             label_height = ttk.Label(self, text="Height:       ", font=self.custom_font3, background="light sky blue")
@@ -107,7 +130,7 @@ class FirstScreen(tk.Frame):
             label_SizeX.grid(row=9, column=1, padx=0, pady=0, sticky=tk.E)
             self.entry_SizeL.grid(row=10, column=2, padx=0, pady=0, sticky=tk.W)
             label_width.grid(row=10, column=1, padx=0, pady=7, sticky=tk.E)
-            self.run_button.grid(row=11, columnspan=100, padx=400, pady=47)
+            self.run_button.grid(row=11, columnspan=100, padx=400, pady=79)
 
     def switch_to_second_screen(self):
         routers = self.entry_Routers.get()

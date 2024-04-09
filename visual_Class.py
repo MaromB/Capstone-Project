@@ -238,7 +238,7 @@ class Visual:
 
         self.ax_graph.tick_params(axis='both', which='both', direction='in', top=True, right=True)
         self.ax_graph.grid(True, linestyle='--', alpha=0.5)
-        self.fig_graph.tight_layout()  # Adjust layout to prevent clipping
+        self.fig_graph.tight_layout()
 
         self.canvas_graph.draw()
         time.sleep(0.1)

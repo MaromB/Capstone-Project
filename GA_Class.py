@@ -53,7 +53,7 @@ class GA:
 
                 self.router_placement_crossover()
 
-                self.mutate_population(0.05)
+                self.mutate_population(0.1)
 
                 # self.resolve_router_overlap_population(self.new_population)
 
@@ -139,8 +139,9 @@ class GA:
             penalty = len(routers) - len(set((router.x, router.y) for router in routers))
             coverage_list.append(counter / len(self.clients) * 100)
             giant_list.append(self.calculate_sgc(routers))
-            fit_list.append(0.75 * self.calculate_sgc(routers) + 0.25 * (
-                    counter / len(self.clients) * 100) - 0.3 * penalty)
+            fitness = ((0.75 * (self.calculate_sgc(routers) / self.num_of_routers))
+                       + 0.25 * (counter / len(self.clients)) - 0.3 * penalty) * 100
+            fit_list.append(fitness)
 
         return fit_list, coverage_list, giant_list
 
@@ -186,27 +187,20 @@ class GA:
 
         for _ in range(num_iterations):
             i, j = random.sample(range(len(copy_population)), 2)
-            cur_list = []
-            parent1 = copy_population[i]
-            parent2 = copy_population[j]
+            parent1, parent2 = copy_population[i], copy_population[j]
 
-            base_parent = parent1 if random.random() < 0.5 else parent2
-            inherit_probability = 0.5
-            routers_from_base = 0
+            child = self.uniform_crossover(parent1, parent2)
 
-            for router_position in base_parent:
-                if random.random() < inherit_probability:
-                    cur_list.append(router_position)
-                    routers_from_base += 1
+            self.new_population.append(child)
 
-            routers_to_inherit = len(base_parent) - routers_from_base
-            if routers_to_inherit > 0:
-                other_parent = parent2 if base_parent == parent1 else parent1
-                routers_to_inherit = min(routers_to_inherit, len(other_parent))
-                routers_inherited = random.sample(other_parent, routers_to_inherit)
-                cur_list.extend(routers_inherited)
-
-            self.new_population.append(cur_list)
+    def uniform_crossover(self, parent1, parent2):
+        child = []
+        for gene1, gene2 in zip(parent1, parent2):
+            if random.choice([True, False]):  # Randomly select genes from parents
+                child.append(gene1)
+            else:
+                child.append(gene2)
+        return child
 
     def mutate_population(self, mutation_rate):
         for routers in self.new_population:
