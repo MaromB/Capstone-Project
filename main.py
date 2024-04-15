@@ -2,28 +2,34 @@ import threading
 import time
 import tkinter
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from PSO_Class import PSO
 from area_Class import Area
 from GA_Class import GA
 from image_Class import ImageManager
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from client_Class import Client
+from PIL import Image, ImageDraw, ImageTk
 
 
 class FirstScreen(tk.Frame):
     def __init__(self, root, show_second_screen):
         super().__init__(root)
+        self.option_manual = None
+        self.option_random = None
         self.image_display_label = None
         self.imageManager = None
         self.entry_SizeL = None
         self.entry_SizeH = None
         self.photo_combobox = None
+        self.clients = []
         self.show_second_screen = show_second_screen
         self.root = root
         screen_height = self.master.winfo_screenheight()
         screen_width = self.master.winfo_screenwidth()
         self.check_image = tk.IntVar()
+        self.random_position_clients = tk.IntVar()
 
         style = ttk.Style()
         style.configure("Custom.TFrame", background="light sky blue")
@@ -43,7 +49,7 @@ class FirstScreen(tk.Frame):
         x = (screen_width - 800) // 2
         y = (screen_height - 600) // 2
 
-        self.master.geometry(f'1000x700+{x + 100}+{y - 70}')
+        self.master.geometry(f'1050x750+{x + 100}+{y - 70}')
 
         self.label_Space = ttk.Label(info_frame1, text=" ", background="light sky blue")
         self.label_of_project = ttk.Label(info_frame1, text="Optimization of routers placements in WMNs",
@@ -70,7 +76,7 @@ class FirstScreen(tk.Frame):
                                            command=self.show_buttons, background="light sky blue",
                                            font=self.custom_font3)
 
-        self.label_Space.grid(row=1, column=0, padx=0, pady=30, sticky=tk.W)
+        self.label_Space.grid(row=1, column=0, padx=0, pady=10, sticky=tk.W)
         self.label_of_project.grid(row=2, column=0, padx=18, pady=45)
         self.label_Following.grid(row=3, column=0, padx=15, pady=30, sticky=tk.W)
         self.label_Routers.grid(row=4, column=0, padx=20, pady=0, sticky=tk.W)
@@ -81,21 +87,40 @@ class FirstScreen(tk.Frame):
         self.algorithm_combobox.grid(row=6, column=1, padx=0, pady=0, sticky=tk.E)
         self.label_method.grid(row=7, column=0, padx=20, pady=0, sticky=tk.W)
         self.option_Rect.grid(row=7, column=1, padx=0, pady=0, sticky=tk.E)
-        self.option_Image.grid(row=7, column=2, padx=0, pady=0, sticky=tk.E)
+        self.option_Image.grid(row=7, column=2, padx=0, pady=0, sticky=tk.W)
         self.run_button.grid(row=10, columnspan=100, padx=400, pady=184, sticky=tk.W)
 
-    def update_image_display(self, event=None):
-        # Retrieve the selected image number
-        selected_number = self.photo_combobox.get()
-        if selected_number:
-            # Assuming your ImageManager's preloaded_images dictionary uses integers as keys
-            image_number = int(selected_number)
-            # Retrieve the PhotoImage object; assuming it's the frame_image
-            selected_image = self.imageManager.preloaded_images[image_number][1]
-            # Update the label to display the selected image
-            self.image_display_label.configure(image=selected_image)
-            # Keep a reference to the image to prevent it from being garbage collected
-            self.image_display_label.image = selected_image
+    def update_screen_display(self, event=None):
+        if self.check_image.get() == 1:
+            selected_number = self.photo_combobox.get()
+            if selected_number:
+                image_number = int(selected_number)
+                # Retrieve the PhotoImage object; assuming it's the frame_image
+                selected_image = self.imageManager.preloaded_images[image_number][1]
+                image_width = selected_image.width()
+                image_height = selected_image.height()
+                self.image_display_label.config(width=image_width, height=image_height)
+                # Create or update the image item on the canvas
+                if hasattr(self, "image_item"):
+                    self.image_display_label.itemconfig(self.image_item, image=selected_image)
+                else:
+                    self.image_item = self.image_display_label.create_image(0, 0, image=selected_image, anchor=tk.NW)
+                # Keep a reference to the image to prevent it from being garbage collected
+                self.image_display_label.image = selected_image
+        else:
+            # Smooth image creation with maximum size of 250x250
+            canvas_width = int(self.entry_SizeH.get()) if self.entry_SizeH.get() else 0
+            canvas_height = int(self.entry_SizeL.get()) if self.entry_SizeL.get() else 0
+            if canvas_width > 0 and canvas_height > 0:
+                # Calculate scaling factor
+                self.image_display_label.config(width=canvas_width, height=canvas_height)
+                smooth_image = Image.new("RGB", (canvas_width, canvas_height), color="white")
+                smooth_photo = ImageTk.PhotoImage(smooth_image)
+                if hasattr(self, "image_item"):
+                    self.image_display_label.itemconfig(self.image_item, image=smooth_photo)
+                else:
+                    self.image_item = self.image_display_label.create_image(0, 0, image=smooth_photo, anchor=tk.NW)
+                self.image_display_label.image = smooth_photo
 
     def show_buttons(self):
         for row in range(8, 11):
@@ -103,55 +128,106 @@ class FirstScreen(tk.Frame):
                 widget.grid_forget()
 
         if self.check_image.get() == 1:
-            choose_photo = ttk.Label(self, text="Structure:", font=self.custom_font, background="light sky blue")
+            choose_photo = ttk.Label(self, text="Structure: \n\nDistribution clients:", font=self.custom_font,
+                                     background="light sky blue")
             self.photo_combobox = ttk.Combobox(self, width=7)
             if self.imageManager == None:
                 self.imageManager = ImageManager()
                 self.imageManager.preload_images(1, 13)
             self.photo_combobox['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13')
-            choose_photo.grid(row=8, column=0, padx=20, pady=5, sticky=tk.W)
-            self.photo_combobox.grid(row=8, column=1, padx=0, pady=0, sticky=tk.E)
-            self.photo_combobox.bind("<<ComboboxSelected>>", self.update_image_display)
+            choose_photo.grid(row=8, column=0, padx=20, pady=5, sticky=tk.NW)
+            self.photo_combobox.grid(row=8, column=1, padx=0, pady=20, sticky=tk.N)
+            self.photo_combobox.bind("<<ComboboxSelected>>", self.update_screen_display)
             self.photo_combobox.set('1')
-            self.image_display_label = ttk.Label(self)
-            self.image_display_label.grid(row=8, column=2, padx=20, pady=5)
-            self.update_image_display()
+            self.image_display_label = tk.Canvas(self)
+            self.image_display_label.grid(row=8, column=4, padx=10, pady=(5, 10), sticky=tk.N)
+            self.random_position_clients.set(2)
+            self.option_random = tk.Radiobutton(self, text="Random", variable=self.random_position_clients, value=2,
+                                                background="light sky blue", font=self.custom_font3)
+            self.option_manual = tk.Radiobutton(self, text="Manual", variable=self.random_position_clients,
+                                                value=1, background="light sky blue", font=self.custom_font3)
+            self.option_random.grid(row=8, column=1, padx=0, pady=(70, 80), sticky=tk.NW)
+            self.option_manual.grid(row=8, column=1, padx=0, pady=(110, 0), sticky=tk.NW)
+            self.random_position_clients.trace_add('write', self.bind_click_event)
+            self.update_screen_display(self.check_image.get())
             self.run_button.grid(row=11, columnspan=100, padx=400, pady=20)
-        if self.check_image.get() == 2:
-            label_Size = ttk.Label(self, text="Size of area:", font=self.custom_font, background="light sky blue")
-            label_height = ttk.Label(self, text="Height:       ", font=self.custom_font3, background="light sky blue")
-            label_SizeX = ttk.Label(self, text="  x        ", font=self.custom_font, background="light sky blue")
-            label_width = ttk.Label(self, text="Width:         ", font=self.custom_font3, background="light sky blue")
+        elif self.check_image.get() == 2:
+            label_Size = ttk.Label(self, text="Size of area:\n\nDistribution clients:", font=self.custom_font,
+                                   background="light sky blue")
+            label_height = ttk.Label(self, text="Height:\n     x\nWidth:       ", font=self.custom_font3,
+                                     background="light sky blue")
+            self.random_position_clients.set(2)
+            self.option_random = tk.Radiobutton(self, text="Random", variable=self.random_position_clients, value=2,
+                                                background="light sky blue", font=self.custom_font3)
+            self.option_manual = tk.Radiobutton(self, text="Manual", variable=self.random_position_clients,
+                                                value=1, command=self.update_screen_display,
+                                                background="light sky blue", font=self.custom_font3)
             self.entry_SizeH = ttk.Entry(self, width=7)
             self.entry_SizeL = ttk.Entry(self, width=7)
-            label_Size.grid(row=8, column=0, padx=20, pady=5, sticky=tk.W)
-            label_height.grid(row=8, column=1, padx=0, pady=0, sticky=tk.E)
-            self.entry_SizeH.grid(row=8, column=2, padx=(0, 0), pady=10, sticky=tk.W)
-            label_SizeX.grid(row=9, column=1, padx=0, pady=0, sticky=tk.E)
-            self.entry_SizeL.grid(row=10, column=2, padx=0, pady=0, sticky=tk.W)
-            label_width.grid(row=10, column=1, padx=0, pady=7, sticky=tk.E)
-            self.run_button.grid(row=11, columnspan=100, padx=400, pady=79)
+            label_Size.grid(row=8, column=0, padx=20, pady=5, sticky=tk.NW)
+            label_height.grid(row=8, column=1, padx=0, pady=0, sticky=tk.NE)
+            self.entry_SizeH.grid(row=8, column=2, padx=(0, 0), pady=10, sticky=tk.NW)
+            self.entry_SizeL.grid(row=8, column=2, padx=0, pady=40, sticky=tk.NW)
+            self.option_random.grid(row=8, column=1, padx=0, pady=0, sticky=tk.SW)
+            self.option_manual.grid(row=8, column=2, padx=0, pady=0, sticky=tk.SW)
+            height = int(self.entry_SizeH.get()) if self.entry_SizeH.get() else 0
+            width = int(self.entry_SizeL.get()) if self.entry_SizeL.get() else 0
+            self.image_display_label = tk.Canvas(self, width=width, height=height)
+            self.image_display_label.grid(row=8, column=4, padx=10, pady=(5, 10), sticky=tk.N)
+            self.random_position_clients.trace_add('write', self.bind_click_event)
+            self.update_screen_display(self.check_image.get())
+            self.run_button.grid(row=10, columnspan=100, padx=400, pady=20)
+
+    def handle_click(self, event):
+        if len(self.clients) >= int(self.entry_Clients.get()):
+            messagebox.showwarning("Warning", "Maximum number of clients reached.")
+            return
+        x = event.x
+        y = event.y
+        client = Client(x, y)
+        self.clients.append(client)
+        self.draw_client_locations(self.image_display_label, self.clients)
+
+    def bind_click_event(self, *args):
+        if self.random_position_clients.get() == 1:
+            self.image_display_label.bind("<Button-1>", self.handle_click)
+        else:
+            self.image_display_label.unbind("<Button-1>")
+
+    def draw_client_locations(self, canvas, clients):
+        # Clear any previous drawings on the canvas
+        canvas.delete("clients")
+        x_size = 5
+        line_width = 2
+        for client in clients:
+            x, y = client.x, client.y
+            canvas.create_line(x - x_size, y - x_size, x + x_size, y + x_size, fill="black", width=line_width,
+                               tags="clients")
+            canvas.create_line(x - x_size, y + x_size, x + x_size, y - x_size, fill="black", width=line_width,
+                               tags="clients")
 
     def switch_to_second_screen(self):
         routers = self.entry_Routers.get()
-        clients = self.entry_Clients.get()
+        if self.random_position_clients.get() == 2:
+            clients = self.entry_Clients.get()
+        else:
+            clients = self.clients
         algotype = self.algorithm_combobox.get()
         check_image = self.check_image.get()
 
         if check_image == 2:
             height = self.entry_SizeH.get()
             width = self.entry_SizeL.get()
-            self.show_second_screen(routers, clients, height, width, algotype, None, 0)
+            self.show_second_screen(routers, clients, height, width, algotype, None, 0, self.random_position_clients)
         else:
             num_photo = self.photo_combobox.get()
-            self.show_second_screen(routers, clients, None, None, algotype, num_photo, 1)
+            self.show_second_screen(routers, clients, None, None, algotype, num_photo, 1, self.random_position_clients)
 
 
 class SecondScreen(tk.Frame):
-    def __init__(self, root, first_screen, routers, clients, height, width, algotype, num_photo, check_image,
-                 show_second_screen):
+    def __init__(self, root, first_screen, routers, clients, height, width, algotype, num_photo, check_image
+                 , random_position_clients):
         super().__init__(root)
-        self.show_second_screen = show_second_screen
         self.root = root
         self.first_screen = first_screen
         self.routers = routers
@@ -162,6 +238,7 @@ class SecondScreen(tk.Frame):
         self.algotype = algotype
         self.num_photo = num_photo
         self.check_image = check_image
+        self.random_position_clients = random_position_clients
         self.second_screen = None
         self.iteration_number = tk.StringVar(value="Iteration number:         ")
         self.coverage_percentage = tk.StringVar(value="Coverage:            0%")
@@ -211,8 +288,8 @@ class SecondScreen(tk.Frame):
                                                       background="light sky blue")
             self.label_number_of_particle.grid(row=1, column=1, padx=0, pady=0, sticky=tk.W)
             self.number_of_particle = ttk.Combobox(info_frame2, width=8)
-            self.number_of_particle['values'] = ('Graph', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
-                                                 '14', '15', '16', '17', '18', '19', '20')
+            self.number_of_particle['values'] = ('Graph', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'
+                                                 , '13', '14', '15', '16', '17', '18', '19', '20')
             self.number_of_particle.set('1')
 
         if check_image:
@@ -220,14 +297,20 @@ class SecondScreen(tk.Frame):
             self.imageManager.load_image(self.num_photo)
             self.imageManager.find_structure_shape()
             self.space = Area()
-            self.space.generate_random_clients_for_photo(int(self.clients), self.imageManager.shape_polygon)
+            if self.random_position_clients.get() == 2:
+                self.space.generate_random_clients_for_photo(int(self.clients), self.imageManager.shape_polygon)
+            else:
+                self.space.clients = self.clients
             if algotype == 'GA':
                 self.algorithm_GA = GA(self.space, self, None, None, self.imageManager)
             else:
                 self.algorithm_PSO = PSO(self.space, self, None, None, self.imageManager)
         else:
             self.space = Area(int(self.height), int(self.width))
-            self.space.generate_random_clients(int(self.clients))
+            if self.random_position_clients.get() == 2:
+                self.space.generate_random_clients(int(self.clients))
+            else:
+                self.space.clients = self.clients
             if algotype == 'GA':
                 self.algorithm_GA = GA(self.space, self, self.height, self.width, None)
             else:
@@ -318,7 +401,8 @@ class OptimizationApp:
         self.first_screen = FirstScreen(self.root, self.show_second_screen)
         self.first_screen.pack()
 
-    def show_second_screen(self, routers, clients, height, width, algotype, num_photo, check_image):
+    def show_second_screen(self, routers, clients, height, width, algotype, num_photo, check_image
+                           , random_position_clients):
         if not check_image:
             self.first_screen.entry_SizeH.delete(0, tk.END)
             self.first_screen.entry_SizeL.delete(0, tk.END)
@@ -338,7 +422,7 @@ class OptimizationApp:
                                                         font=self.first_screen.custom_font3)
 
         self.second_screen = SecondScreen(self.root, self.first_screen, routers, clients, height,
-                                          width, algotype, num_photo, check_image, self.show_second_screen)
+                                          width, algotype, num_photo, check_image, random_position_clients)
         self.second_screen.pack()
         self.root.withdraw()
 

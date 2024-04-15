@@ -139,8 +139,8 @@ class GA:
             penalty = len(routers) - len(set((router.x, router.y) for router in routers))
             coverage_list.append(counter / len(self.clients) * 100)
             giant_list.append(self.calculate_sgc(routers))
-            fitness = ((0.75 * (self.calculate_sgc(routers) / self.num_of_routers))
-                       + 0.25 * (counter / len(self.clients)) - 0.3 * penalty) * 100
+            fitness = ((0.6 * (self.calculate_sgc(routers) / self.num_of_routers))
+                       + 0.4 * (counter / len(self.clients)) - 0.3 * penalty) * 100
             fit_list.append(fitness)
 
         return fit_list, coverage_list, giant_list

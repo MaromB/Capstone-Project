@@ -63,7 +63,7 @@ class ImageManager:
 
             # Load and resize the original image
             original_image = cv2.imread(original_path)
-            resized_original_image = cv2.resize(original_image, (150, 150))
+            resized_original_image = cv2.resize(original_image, (250, 250))
             # Convert to PhotoImage
             original_photo_image = cv_image_to_photoimage(resized_original_image)
 
