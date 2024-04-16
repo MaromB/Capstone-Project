@@ -233,7 +233,6 @@ class PSO:
         elapsed_time = time.time() - self.start_time - self.pause_time
         formatted_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
         self.second_screen.time_text.set("Time:     " + formatted_time)
-        # print(f"Value of combobox: '{value_of_combobox}'")
         coverage_percent = self.swarm[2].coverage
         self.second_screen.coverage_percentage.set("Coverage:                 " +
                                                    str(round(coverage_percent, 1)) + "%")

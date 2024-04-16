@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw, ImageTk
 class FirstScreen(tk.Frame):
     def __init__(self, root, show_second_screen):
         super().__init__(root)
+        # self.image_item = 1
         self.option_manual = None
         self.option_random = None
         self.image_display_label = None
@@ -95,32 +96,23 @@ class FirstScreen(tk.Frame):
             selected_number = self.photo_combobox.get()
             if selected_number:
                 image_number = int(selected_number)
-                # Retrieve the PhotoImage object; assuming it's the frame_image
                 selected_image = self.imageManager.preloaded_images[image_number][1]
                 image_width = selected_image.width()
                 image_height = selected_image.height()
                 self.image_display_label.config(width=image_width, height=image_height)
-                # Create or update the image item on the canvas
                 if hasattr(self, "image_item"):
                     self.image_display_label.itemconfig(self.image_item, image=selected_image)
                 else:
                     self.image_item = self.image_display_label.create_image(0, 0, image=selected_image, anchor=tk.NW)
-                # Keep a reference to the image to prevent it from being garbage collected
                 self.image_display_label.image = selected_image
         else:
-            # Smooth image creation with maximum size of 250x250
             canvas_width = int(self.entry_SizeH.get()) if self.entry_SizeH.get() else 0
             canvas_height = int(self.entry_SizeL.get()) if self.entry_SizeL.get() else 0
             if canvas_width > 0 and canvas_height > 0:
-                # Calculate scaling factor
-                self.image_display_label.config(width=canvas_width, height=canvas_height)
-                smooth_image = Image.new("RGB", (canvas_width, canvas_height), color="white")
+                self.image_display_label.config(width=canvas_height, height=canvas_width)
+                smooth_image = Image.new("RGB", (0, 0), color="white")
                 smooth_photo = ImageTk.PhotoImage(smooth_image)
-                if hasattr(self, "image_item"):
-                    self.image_display_label.itemconfig(self.image_item, image=smooth_photo)
-                else:
-                    self.image_item = self.image_display_label.create_image(0, 0, image=smooth_photo, anchor=tk.NW)
-                self.image_display_label.image = smooth_photo
+                self.image_item = self.image_display_label.create_image(250, 0, image=smooth_photo, anchor=tk.NW)
 
     def show_buttons(self):
         for row in range(8, 11):
@@ -179,32 +171,47 @@ class FirstScreen(tk.Frame):
             self.run_button.grid(row=10, columnspan=100, padx=400, pady=20)
 
     def handle_click(self, event):
+        scaleX = 4.85
+        scaleY = 2.9
+        x = event.x
+        y = event.y
+        if self.check_image.get() == 2:  # User coordinate
+            scaleX = 1
+            scaleY = 1
+            y = int(self.entry_SizeH.get()) - event.y
+
         if len(self.clients) >= int(self.entry_Clients.get()):
             messagebox.showwarning("Warning", "Maximum number of clients reached.")
             return
-        x = event.x
-        y = event.y
-        client = Client(x, y)
+        client = Client(x * scaleX, y * scaleY)
         self.clients.append(client)
         self.draw_client_locations(self.image_display_label, self.clients)
+
+    def draw_client_locations(self, canvas, clients):
+        scaleX = 1
+        scaleY = 1
+        if self.check_image.get() == 1:
+            scaleX = 4.85
+            scaleY = 2.9
+
+        canvas.delete("clients")
+        x_size = 5
+        line_width = 2
+        for client in clients:
+            if self.check_image.get() == 1:
+                x, y = (client.x / scaleX), (client.y / scaleY)
+            else:
+                x, y = (client.x / scaleX), (int(self.entry_SizeH.get()) - client.y / scaleY)
+            canvas.create_line(x - x_size, y - x_size, x + x_size, y + x_size, fill="black", width=line_width,
+                               tags="clients")
+            canvas.create_line(x - x_size, y + x_size, x + x_size, y - x_size, fill="black", width=line_width,
+                               tags="clients")
 
     def bind_click_event(self, *args):
         if self.random_position_clients.get() == 1:
             self.image_display_label.bind("<Button-1>", self.handle_click)
         else:
             self.image_display_label.unbind("<Button-1>")
-
-    def draw_client_locations(self, canvas, clients):
-        # Clear any previous drawings on the canvas
-        canvas.delete("clients")
-        x_size = 5
-        line_width = 2
-        for client in clients:
-            x, y = client.x, client.y
-            canvas.create_line(x - x_size, y - x_size, x + x_size, y + x_size, fill="black", width=line_width,
-                               tags="clients")
-            canvas.create_line(x - x_size, y + x_size, x + x_size, y - x_size, fill="black", width=line_width,
-                               tags="clients")
 
     def switch_to_second_screen(self):
         routers = self.entry_Routers.get()
@@ -333,13 +340,23 @@ class SecondScreen(tk.Frame):
         self.speed_slider = ttk.Scale(info_frame2, from_=0, to=300, orient="horizontal", variable=self.speed_var,
                                       length=150, style="Horizontal.TScale")
         if self.check_image:
-            self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and"
-                                                             f" image number {self.num_photo}", font=custom_font,
-                                           background="light sky blue")
+            if self.random_position_clients.get() == 2:
+                self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and"
+                                                                 f" image number {self.num_photo}", font=custom_font,
+                                               background="light sky blue")
+            else:
+                self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {len(clients)} clients and"
+                                                                 f" image number {self.num_photo}", font=custom_font,
+                                               background="light sky blue")
         else:
-            self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and an area"
-                                                             f" of {height}X{width}", font=custom_font,
-                                           background="light sky blue")
+            if self.random_position_clients.get() == 2:
+                self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {clients} clients and an area"
+                                                                 f" of {height}X{width}", font=custom_font,
+                                               background="light sky blue")
+            else:
+                self.details_label = ttk.Label(info_frame3, text=f"For {routers} routers, {len(clients)} "
+                                                                 f"clients and an area of {height}X{width}"
+                                               , font=custom_font, background="light sky blue")
 
         self.stop_button = ttk.Button(info_frame3, text="Stop", command=self.stop_button, style="Custom.TButton")
         self.pause_continue_button = ttk.Button(info_frame3, text="Pause", command=self.toggle_pause_continue,
