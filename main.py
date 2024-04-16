@@ -10,13 +10,12 @@ from image_Class import ImageManager
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from client_Class import Client
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageTk
 
 
 class FirstScreen(tk.Frame):
     def __init__(self, root, show_second_screen):
         super().__init__(root)
-        # self.image_item = 1
         self.option_manual = None
         self.option_random = None
         self.image_display_label = None
@@ -50,7 +49,7 @@ class FirstScreen(tk.Frame):
         x = (screen_width - 800) // 2
         y = (screen_height - 600) // 2
 
-        self.master.geometry(f'1050x750+{x + 100}+{y - 70}')
+        self.master.geometry(f'1050x750+{x + 50}+{y - 100}')
 
         self.label_Space = ttk.Label(info_frame1, text=" ", background="light sky blue")
         self.label_of_project = ttk.Label(info_frame1, text="Optimization of routers placements in WMNs",

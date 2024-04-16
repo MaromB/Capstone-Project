@@ -11,6 +11,29 @@ from router_Class import Router
 from visual_Class import Visual
 
 
+def bonus_calculation(routers, radius=5):
+    bonus = 0
+    checked_pairs = set()  # To store checked pairs to avoid duplication
+
+    for i in range(len(routers)):
+        for j in range(i + 1, len(routers)):  # Avoid checking pairs twice
+            pair = (i, j) if i < j else (j, i)  # Sort the pair to avoid duplicates
+            if pair in checked_pairs:
+                continue
+
+            router1 = routers[i]
+            router2 = routers[j]
+
+            distance = math.sqrt((router1.x - router2.x) ** 2 + (router1.y - router2.y) ** 2)
+            if distance < radius:
+                inverse_distance_squared = distance
+                bonus += inverse_distance_squared
+
+            checked_pairs.add(pair)
+
+    return bonus
+
+
 class GA:
     def __init__(self, space, second_screen, height=None, width=None, imageManager=None):
         self.new_population = []
@@ -53,7 +76,7 @@ class GA:
 
                 self.router_placement_crossover()
 
-                self.mutate_population(0.1)
+                self.mutate_population(0.5)
 
                 # self.resolve_router_overlap_population(self.new_population)
 
@@ -136,11 +159,13 @@ class GA:
             for client in self.clients:
                 if client.in_range:
                     counter += 1
-            penalty = len(routers) - len(set((router.x, router.y) for router in routers))
+            bonus = bonus_calculation(routers)
             coverage_list.append(counter / len(self.clients) * 100)
             giant_list.append(self.calculate_sgc(routers))
-            fitness = ((0.6 * (self.calculate_sgc(routers) / self.num_of_routers))
-                       + 0.4 * (counter / len(self.clients)) - 0.3 * penalty) * 100
+
+            fitness = ((0.5 * (self.calculate_sgc(routers) / self.num_of_routers)) + 0.4 * (counter / len(self.clients))
+                       + 0.1 * (bonus / (5 * self.num_of_routers))) * 100
+
             fit_list.append(fitness)
 
         return fit_list, coverage_list, giant_list

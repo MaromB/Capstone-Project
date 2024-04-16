@@ -1,3 +1,4 @@
+import math
 import random
 import threading
 import copy
@@ -21,6 +22,29 @@ def update_particle_position(list_of_position):
                          coord in particle_position]
     particle_position = sorted(particle_position, key=lambda coord: (coord[0], coord[1]))
     return particle_position
+
+
+def bonus_calculation(routers, radius=5):
+    bonus = 0
+    checked_pairs = set()  # To store checked pairs to avoid duplication
+
+    for i in range(len(routers)):
+        for j in range(i + 1, len(routers)):  # Avoid checking pairs twice
+            pair = (i, j) if i < j else (j, i)  # Sort the pair to avoid duplicates
+            if pair in checked_pairs:
+                continue
+
+            router1 = routers[i]
+            router2 = routers[j]
+
+            distance = math.sqrt((router1.x - router2.x) ** 2 + (router1.y - router2.y) ** 2)
+            if distance < radius:
+                inverse_distance_squared = distance
+                bonus += inverse_distance_squared
+
+            checked_pairs.add(pair)
+
+    return bonus
 
 
 class PSO:
@@ -169,12 +193,14 @@ class PSO:
             for client in self.clients:
                 if client.in_range:
                     counter += 1
-            penalty = len(particle.solution) - len(set((router.x, router.y) for router in particle.solution))
+            # penalty = len(particle.solution) - len(set((router.x, router.y) for router in particle.solution))
+            bonus = bonus_calculation(particle.solution)
+
             particle.coverage = int((counter / (len(self.clients))) * 100)
             particle.giant_component_size = self.calculate_sgc(particle.solution)
-            # (particle.giant_component_size / len(particle.solution))
-            particle.fitness = ((0.6 * (particle.giant_component_size / len(particle.solution)) +
-                                0.4 * particle.coverage / 100) - 0.3 * penalty) * 100
+
+            particle.fitness = ((0.5 * (particle.giant_component_size / len(particle.solution)))
+                                + 0.4 * (particle.coverage / 100) + 0.1 * (bonus / (5 * len(particle.solution)))) * 100
 
     def update_swarm(self, inertia_weight, cognitive_weight, social_weight, max_velocity):
         global x, y
