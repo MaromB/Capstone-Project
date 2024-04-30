@@ -243,5 +243,3 @@ class Visual:
         self.canvas_graph.draw()
         time.sleep(0.1)
         self.canvas_graph_widget.update()
-
-

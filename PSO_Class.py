@@ -38,7 +38,7 @@ def bonus_calculation(routers, radius=5):
             router2 = routers[j]
 
             distance = math.sqrt((router1.x - router2.x) ** 2 + (router1.y - router2.y) ** 2)
-            if distance < radius:
+            if radius * 0.90 < distance < radius:
                 inverse_distance_squared = distance
                 bonus += inverse_distance_squared
 
@@ -167,7 +167,7 @@ class PSO:
         self.graph = defaultdict(list)
         for router1, router2 in combinations(routers, 2):
             distance = ((router1.x - router2.x) ** 2 + (router1.y - router2.y) ** 2) ** 0.5
-            if distance <= router1.radius:
+            if router1.radius * 0.9 <= distance <= router1.radius:
                 self.graph[router1].append(router2)
                 self.graph[router2].append(router1)
 
@@ -179,8 +179,29 @@ class PSO:
 
         return giant_component_size
 
+    def calculate_boundary_penalty(self, routers):
+        boundary_penalty = 0
+        for router in routers:
+            if router.x < self.radius or router.x > self.width - self.radius or \
+                    router.y < self.radius or router.y > self.height - self.radius:
+                boundary_penalty += 1
+        return boundary_penalty
+
+    def calculate_optimal_coverage(self, routers):
+        optimal_coverage = len(routers) * (self.radius ** 2) / 12
+        unique_distances = set()
+        for i in range(len(routers)):
+            for j in range(i + 1, len(routers)):
+                distance = math.sqrt((routers[i].x - routers[j].x) ** 2 + (routers[i].y - routers[j].y) ** 2)
+                unique_distances.add(distance)
+        coverage_ratio = len(unique_distances) / optimal_coverage
+        return coverage_ratio
+
     def evaluate_fitness(self):
         for particle in self.swarm[0]:
+            # boundary_penalty = self.calculate_boundary_penalty(particle.solution)
+            # coverage_ratio = self.calculate_coverage(particle.solution)
+            optimal_coverage_ratio = self.calculate_optimal_coverage(particle.solution) / 3
             for router in particle.solution:
                 counter = 0
                 for client in self.clients:
@@ -199,8 +220,9 @@ class PSO:
             particle.coverage = int((counter / (len(self.clients))) * 100)
             particle.giant_component_size = self.calculate_sgc(particle.solution)
 
-            particle.fitness = ((0.5 * (particle.giant_component_size / len(particle.solution)))
-                                + 0.4 * (particle.coverage / 100) + 0.1 * (bonus / (5 * len(particle.solution)))) * 100
+            particle.fitness = ((0.15 * (particle.giant_component_size / len(particle.solution)))
+                                + 0.50 * optimal_coverage_ratio + 0.15 * (particle.coverage / 100) + 0.20 * (
+                                        bonus / (5 * len(particle.solution)))) * 100
 
     def update_swarm(self, inertia_weight, cognitive_weight, social_weight, max_velocity):
         global x, y
@@ -218,11 +240,11 @@ class PSO:
 
                 router.velocity = [
                     inertia_weight * router.velocity[0] + random.uniform(0, 1) * cognitive_weight * (
-                                cognitive_x - router.x) + random.uniform(0, 1) * social_weight * (
-                                social_x - router.x),
+                            cognitive_x - router.x) + random.uniform(0, 1) * social_weight * (
+                            social_x - router.x),
                     inertia_weight * router.velocity[1] + random.uniform(0, 1) * cognitive_weight * (
-                                cognitive_y - router.y) + random.uniform(0, 1) * social_weight * (
-                                social_y - router.y)
+                            cognitive_y - router.y) + random.uniform(0, 1) * social_weight * (
+                            social_y - router.y)
                 ]
 
                 router.velocity = (max(-max_velocity, min(router.velocity[0], max_velocity)),

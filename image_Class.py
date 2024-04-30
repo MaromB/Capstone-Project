@@ -2,7 +2,6 @@ import math
 import cv2
 import os
 import numpy as np
-from tkinter import PhotoImage
 from PIL import Image, ImageTk
 
 

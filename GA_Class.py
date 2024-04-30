@@ -25,7 +25,7 @@ def bonus_calculation(routers, radius=5):
             router2 = routers[j]
 
             distance = math.sqrt((router1.x - router2.x) ** 2 + (router1.y - router2.y) ** 2)
-            if distance < radius:
+            if radius * 0.65 < distance < radius:
                 inverse_distance_squared = distance
                 bonus += inverse_distance_squared
 
@@ -110,7 +110,8 @@ class GA:
                 self.visual.mark_covered_clients(self.routers_to_show, self.clients, self.radius)
                 if self.check_image:
                     self.visual.update_parameters(self.routers_to_show, self.clients, self.radius, 'GA', 'image',
-                                                  self.fitness_for_graph, None, None, self.imageManager.original_image,)
+                                                  self.fitness_for_graph, None, None,
+                                                  self.imageManager.original_image, )
                 elif not self.check_image:
                     self.visual.update_parameters(self.routers_to_show, self.clients, self.radius, 'GA', 'rect',
                                                   self.fitness_for_graph, self.height, self.width, None)
@@ -149,11 +150,34 @@ class GA:
 
         return giant_component_size
 
+    def calculate_coverage(self, routers):
+        covered_area = 0
+        for y in range(0, int(self.height), int(self.radius)):
+            for x in range(0, int(self.width), int(self.radius)):
+                point = (x, y)
+                is_covered = any(router.in_range(point, self.radius) for router in routers)
+                if is_covered:
+                    covered_area += 1
+        optimal_coverage = len(routers) * (self.radius ** 2) / 2
+        coverage_ratio = covered_area / optimal_coverage
+        return coverage_ratio
+
+    def calculate_optimal_coverage(self, routers):
+        optimal_coverage = len(routers) * math.pi * (self.radius ** 2) - 1
+        unique_distances = set()
+        for i in range(len(routers)):
+            for j in range(i + 1, len(routers)):
+                distance = math.sqrt((routers[i].x - routers[j].x) ** 2 + (routers[i].y - routers[j].y) ** 2)
+                unique_distances.add(distance)
+        coverage_ratio = len(unique_distances) / optimal_coverage
+        return coverage_ratio
+
     def fitness_function(self, population):
         coverage_list = []
         giant_list = []
         fit_list = []
         for routers in population:
+
             self.visual.mark_covered_clients(routers, self.clients, self.radius)
             counter = 0
             for client in self.clients:
@@ -163,8 +187,11 @@ class GA:
             coverage_list.append(counter / len(self.clients) * 100)
             giant_list.append(self.calculate_sgc(routers))
 
-            fitness = ((0.5 * (self.calculate_sgc(routers) / self.num_of_routers)) + 0.4 * (counter / len(self.clients))
-                       + 0.1 * (bonus / (5 * self.num_of_routers))) * 100
+            optimal_coverage_ratio = self.calculate_optimal_coverage(routers)
+
+            fitness = ((0.25 * (self.calculate_sgc(routers) / self.num_of_routers)) + 0.55 * (
+                    counter / len(self.clients))
+                       + 0.20 * optimal_coverage_ratio + 0.15 * (bonus / (5 * self.num_of_routers))) * 100  ##good
 
             fit_list.append(fitness)
 
