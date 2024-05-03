@@ -49,7 +49,7 @@ class FirstScreen(tk.Frame):
         x = (screen_width - 800) // 2
         y = (screen_height - 600) // 2
 
-        self.master.geometry(f'1050x750+{x + 50}+{y - 100}')
+        self.master.geometry(f'1050x750+{x - 100}+{y - 70}')
 
         self.label_Space = ttk.Label(info_frame1, text=" ", background="light sky blue")
         self.label_of_project = ttk.Label(info_frame1, text="Optimization of routers placements in WMNs",
@@ -269,7 +269,7 @@ class SecondScreen(tk.Frame):
         x = (screen_width - 800) // 2
         y = (screen_height - 600) // 2
 
-        self.tk_screen2.geometry(f'1200x750+{x - 100}+{y - 120}')
+        self.tk_screen2.geometry(f'1200x750+{x - 200}+{y - 65}')
         lable_font = ("Ariel", 22, "bold")
         custom_font = ("Ariel", 14)
 

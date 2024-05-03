@@ -281,7 +281,8 @@ class GA:
         best_conf = self.current_population[index]
         return best_conf, index
 
-    def calculate_coverage(self, router_x, router_y, client_locations):
+
+    def calculate_coverage1(self, router_x, router_y, client_locations):
         coverage_count = 0
         for client_x, client_y in client_locations:
             distance = ((router_x - client_x) ** 2 + (router_y - client_y) ** 2) ** 0.5
